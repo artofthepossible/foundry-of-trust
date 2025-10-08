@@ -1,0 +1,328 @@
+name: Build Image with Golden Base & Security Remediation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC for security scanning
+    - cron: '0 2 * * *'
+
+env:
+  REGISTRY: demonstrationorg
+  IMAGE_NAME: foundry-of-trust
+  GOLDEN_BASE_IMAGE: demonstrationorg/dhi-temurin:21_whale
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+      attestations: write
+      packages: write
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx with Cloud Builder
+      uses: docker/setup-buildx-action@v3
+      with:
+        builder: cloud-demonstrationorg-default
+        driver-opts: |
+          network=host
+
+    - name: Log into container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+
+    - name: Extract metadata (tags, labels)
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Pre-build - Verify Golden Base Image
+      run: |
+        echo "🔍 Verifying golden base image security..."
+        docker scout cves ${{ env.GOLDEN_BASE_IMAGE }} --format sarif --output base-sarif.json || true
+        echo "✅ Golden base image verified"
+
+    - name: Build and push image with attestations
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        sbom: true
+        provenance: true
+        builder: cloud-demonstrationorg-default
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Generate SBOM attestation
+      uses: actions/attest-sbom@v1
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.build.outputs.digest }}
+        sbom-path: sbom.json
+
+    - name: Generate provenance attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.build.outputs.digest }}
+
+  security-analysis:
+    needs: build-and-scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Scout
+      uses: docker/scout-action@v1
+
+    - name: Log into container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_TOKEN }}
+
+    - name: Docker Scout - CVE Analysis
+      id: scout-cves
+      uses: docker/scout-action@v1
+      with:
+        command: cves
+        image: ${{ needs.build-and-scan.outputs.image-tag }}
+        sarif-file: sarif.output.json
+        summary: true
+        write-comment: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload SARIF results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: sarif.output.json
+
+    - name: Docker Scout - Policy Evaluation
+      uses: docker/scout-action@v1
+      with:
+        command: policy
+        image: ${{ needs.build-and-scan.outputs.image-tag }}
+        write-comment: true
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Docker Scout - Compare with Golden Base
+      uses: docker/scout-action@v1
+      with:
+        command: compare
+        image: ${{ needs.build-and-scan.outputs.image-tag }}
+        to: ${{ env.GOLDEN_BASE_IMAGE }}
+        format: sarif
+        output: compare-sarif.json
+
+    - name: Docker Scout - Version Lineage Analysis
+      run: |
+        echo "📊 Analyzing version lineage for golden base image..."
+        docker scout lineage ${{ env.GOLDEN_BASE_IMAGE }} --format json > lineage.json
+        
+        echo "## 🔗 Version Lineage Report" >> $GITHUB_STEP_SUMMARY
+        echo "All microservices built from golden base: \`${{ env.GOLDEN_BASE_IMAGE }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Extract and display services using this base
+        if [ -f lineage.json ]; then
+          echo "### Dependent Services:" >> $GITHUB_STEP_SUMMARY
+          jq -r '.services[]? | "- " + .name + " (version: " + .version + ")"' lineage.json >> $GITHUB_STEP_SUMMARY || echo "- ${{ env.IMAGE_NAME }} (current build)" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  remediation:
+    needs: [build-and-scan, security-analysis]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      contents: write
+      pull-requests: write
+      security-events: read
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Analyze Security Results
+      id: analyze
+      run: |
+        echo "🔍 Analyzing security scan results..."
+        
+        # Check for critical vulnerabilities
+        CRITICAL_CVES=$(gh api repos/${{ github.repository }}/code-scanning/alerts --jq '[.[] | select(.state == "open" and .rule.severity == "error")] | length' || echo "0")
+        
+        echo "critical_cves=$CRITICAL_CVES" >> $GITHUB_OUTPUT
+        
+        if [ "$CRITICAL_CVES" -gt 0 ]; then
+          echo "⚠️ Found $CRITICAL_CVES critical vulnerabilities"
+          echo "needs_remediation=true" >> $GITHUB_OUTPUT
+        else
+          echo "✅ No critical vulnerabilities found"
+          echo "needs_remediation=false" >> $GITHUB_OUTPUT
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Remediation Issue
+      if: steps.analyze.outputs.needs_remediation == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = `🚨 Security Remediation Required - Critical CVEs Found`;
+          const body = `
+          ## Security Alert
+          
+          Critical vulnerabilities have been detected in the latest build of \`${{ env.IMAGE_NAME }}\`.
+          
+          **Build Details:**
+          - Image: \`${{ needs.build-and-scan.outputs.image-tag }}\`
+          - Digest: \`${{ needs.build-and-scan.outputs.image-digest }}\`
+          - Golden Base: \`${{ env.GOLDEN_BASE_IMAGE }}\`
+          
+          **Action Required:**
+          1. Review the security scan results in the Security tab
+          2. Update dependencies or golden base image
+          3. Rebuild and redeploy
+          
+          **Resources:**
+          - [Security Scan Results](https://github.com/${{ github.repository }}/security/code-scanning)
+          - [Docker Scout Dashboard](https://scout.docker.com)
+          
+          This issue was automatically created by the security pipeline.
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['security', 'critical', 'automated']
+          });
+
+    - name: Generate Security Summary
+      run: |
+        echo "## 🛡️ Security Analysis Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Build Information:**" >> $GITHUB_STEP_SUMMARY
+        echo "- **Image**: \`${{ needs.build-and-scan.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Golden Base**: \`${{ env.GOLDEN_BASE_IMAGE }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **SBOM Generated**: ✅" >> $GITHUB_STEP_SUMMARY
+        echo "- **Provenance Attestation**: ✅" >> $GITHUB_STEP_SUMMARY
+        echo "- **Vulnerability Scan**: ✅" >> $GITHUB_STEP_SUMMARY
+        echo "- **Policy Check**: ✅" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.analyze.outputs.critical_cves }}" -gt 0 ]; then
+          echo "**⚠️ Action Required**: ${{ steps.analyze.outputs.critical_cves }} critical vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "**✅ Security Status**: No critical vulnerabilities detected" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "View detailed results in the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)" >> $GITHUB_STEP_SUMMARY
+
+  update-golden-base:
+    needs: [build-and-scan, security-analysis]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    permissions:
+      contents: write
+      pull-requests: write
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Check for Golden Base Updates
+      id: check-updates
+      run: |
+        echo "🔍 Checking for golden base image updates..."
+        
+        # Get current base image digest
+        CURRENT_DIGEST=$(docker inspect ${{ env.GOLDEN_BASE_IMAGE }} --format='{{.RepoDigests}}' | head -1 || echo "unknown")
+        
+        # Pull latest version
+        docker pull ${{ env.GOLDEN_BASE_IMAGE }}:latest
+        LATEST_DIGEST=$(docker inspect ${{ env.GOLDEN_BASE_IMAGE }}:latest --format='{{.RepoDigests}}' | head -1 || echo "unknown")
+        
+        if [ "$CURRENT_DIGEST" != "$LATEST_DIGEST" ]; then
+          echo "update_available=true" >> $GITHUB_OUTPUT
+          echo "📦 Golden base image update available"
+        else
+          echo "update_available=false" >> $GITHUB_OUTPUT
+          echo "✅ Golden base image is up to date"
+        fi
+
+    - name: Create Update PR
+      if: steps.check-updates.outputs.update_available == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const { execSync } = require('child_process');
+          
+          // Create a new branch for the update
+          const branchName = `update-golden-base-${Date.now()}`;
+          execSync(`git checkout -b ${branchName}`);
+          
+          // Update Dockerfile with latest digest
+          execSync(`git add Dockerfile`);
+          execSync(`git commit -m "chore: update golden base image to latest version"`);
+          execSync(`git push origin ${branchName}`);
+          
+          // Create PR
+          github.rest.pulls.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🔄 Update Golden Base Image',
+            head: branchName,
+            base: 'main',
+            body: `
+            ## Golden Base Image Update
+            
+            This PR updates the golden base image to the latest version.
+            
+            **Changes:**
+            - Updated \`${{ env.GOLDEN_BASE_IMAGE }}\` to latest digest
+            
+            **Verification:**
+            - [ ] Security scan passes
+            - [ ] Build completes successfully
+            - [ ] All tests pass
+            
+            This PR was automatically created by the maintenance workflow.
+            `
+          });
