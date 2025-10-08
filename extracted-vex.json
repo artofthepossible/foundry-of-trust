@@ -1,0 +1,72 @@
+{
+  "@context": "https://openvex.dev/ns/v0.2.0",
+  "@id": "https://github.com/artofthepossible/foundry-of-trust/vex/targeted-20251008221816",
+  "author": "Foundry of Trust Security Team",
+  "authorship": {
+    "author": "Foundry of Trust Security Team <security@foundryoftrust.example.com>",
+    "role": "Project Maintainer",
+    "timestamp": "2025-10-08T22:18:16Z"
+  },
+  "role": "Project Maintainer",
+  "timestamp": "2025-10-08T22:18:16Z",
+  "version": "1",
+  "tooling": "foundry-targeted-vex-v1.0",
+  "statements": [
+    {
+      "vulnerability": {
+        "name": "CVE-2025-22235",
+        "description": "Spring Boot Improper Input Validation vulnerability",
+        "cvss": {
+          "version": "3.1",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L",
+          "score": 7.3
+        }
+      },
+      "products": [
+        {
+          "@id": "demonstrationorg/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
+          "identifiers": {
+            "purl": "pkg:oci/demonstrationorg/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
+            "cpe": "cpe:2.3:a:pivotal:spring-boot:3.2.10:*:*:*:*:*:*:*"
+          },
+          "hashes": {
+            "sha256": "sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b"
+          }
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "CVE-2025-22235 affects Spring Boot input validation components that are not utilized in this specific application deployment. The vulnerable input validation code paths are not accessible because: 1) Our application uses a minimal API surface with only health check endpoints, 2) All user input is processed through Spring Security filters with additional validation, 3) The specific input validation components affected by this CVE are not instantiated in our Spring Boot configuration, 4) Application runs in a containerized environment with additional input filtering at the ingress level.",
+      "action_statement": "No remediation required. The vulnerable Spring Boot input validation components are not in the execution path of this application. Monitoring for Spring Boot security updates is sufficient.",
+      "action_statement_timestamp": "2025-10-08T22:18:16Z"
+    },
+    {
+      "vulnerability": {
+        "name": "CVE-2025-41242",
+        "description": "Spring WebMVC Path Traversal vulnerability",
+        "cvss": {
+          "version": "3.1", 
+          "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:L/A:N",
+          "score": 5.9
+        }
+      },
+      "products": [
+        {
+          "@id": "demonstrationorg/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
+          "identifiers": {
+            "purl": "pkg:oci/demonstrationorg/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
+            "cpe": "cpe:2.3:a:pivotal:spring-webmvc:6.1.21:*:*:*:*:*:*:*"
+          },
+          "hashes": {
+            "sha256": "sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b"
+          }
+        }
+      ],
+      "status": "not_affected",
+      "justification": "vulnerable_code_not_in_execute_path",
+      "impact_statement": "CVE-2025-41242 path traversal vulnerability in Spring WebMVC is not exploitable in this application because: 1) The application does not expose any file serving endpoints or static resource handlers that could be exploited for path traversal, 2) All URL mappings are explicitly defined in controller methods with no wildcard or resource handling patterns, 3) The application serves only JSON API responses and health check endpoints, 4) No user-controllable file paths are processed by the application, 5) Spring Security configuration prevents unauthorized access to any endpoints that might process file paths.",
+      "action_statement": "No remediation required. The application architecture prevents exploitation of this path traversal vulnerability. Continue monitoring for Spring WebMVC security updates.",
+      "action_statement_timestamp": "2025-10-08T22:18:16Z"
+    }
+  ]
+}

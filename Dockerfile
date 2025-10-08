@@ -82,6 +82,14 @@ FROM demonstrationorg/dhi-temurin:21_whale AS final
 #    --uid "${UID}" \
 #    appuser
 #USER appuser
+# Add VEX document to image
+COPY scripts/assets/targeted-vex-20251008181815.json /app/vex.json
+
+# Add VEX metadata as labels
+LABEL vex.openvex.dev/schema-version="v0.2.0"
+LABEL vex.openvex.dev/document="/app/vex.json"
+LABEL vex.openvex.dev/embedded="true"
+LABEL org.opencontainers.image.description="Spring Boot application with embedded VEX statements"
 
 # Copy the executable from the "package" stage.
 COPY --from=extract build/target/extracted/dependencies/ ./

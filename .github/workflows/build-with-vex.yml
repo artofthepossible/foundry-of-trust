@@ -1,0 +1,207 @@
+name: Build with Integrated VEX
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to build'
+        required: true
+        default: 'v1.1-DHI-fixed'
+        type: string
+      builder_name:
+        description: 'Docker Buildx builder name'
+        required: true
+        default: 'cloud-demonstrationorg-default'
+        type: string
+  push:
+    branches: [ main ]
+    paths: 
+      - 'src/**'
+      - 'pom.xml'
+      - 'Dockerfile'
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+
+env:
+  IMAGE_NAME: demonstrationorg/foundry-of-trust
+  
+jobs:
+  build-with-vex:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver-opts: |
+          image=moby/buildkit:buildx-stable-1
+        
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        
+    - name: Generate image metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=raw,value=${{ github.event.inputs.image_tag || 'latest' }}
+          type=sha,prefix={{branch}}-
+          
+    - name: Build and push image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        sbom: true
+        provenance: true
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Generate VEX document
+      id: vex
+      run: |
+        # Get image digest
+        IMAGE_DIGEST="${{ steps.build.outputs.digest }}"
+        IMAGE_TAG="${{ github.event.inputs.image_tag || 'latest' }}"
+        VEX_FILE="vex-document-$(date +%Y%m%d%H%M%S).json"
+        
+        echo "IMAGE_DIGEST=$IMAGE_DIGEST" >> $GITHUB_OUTPUT
+        echo "VEX_FILE=$VEX_FILE" >> $GITHUB_OUTPUT
+        
+        # Generate VEX document
+        cat > "$VEX_FILE" << 'EOF'
+        {
+          "@context": "https://openvex.dev/ns/v0.2.0",
+          "@id": "https://openvex.dev/docs/example/vex-${{ github.run_id }}",
+          "author": "Foundry of Trust Demo - GitHub Actions",
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "version": 1,
+          "statements": [
+            {
+              "vulnerability": {
+                "name": "CVE-2025-22235",
+                "@id": "https://www.cve.org/CVERecord?id=CVE-2025-22235"
+              },
+              "products": [
+                {
+                  "@id": "pkg:oci/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}",
+                  "identifiers": {
+                    "purl": "pkg:maven/org.springframework.boot/spring-boot@3.2.10"
+                  }
+                }
+              ],
+              "status": "not_affected",
+              "justification": "vulnerable_code_not_in_execute_path",
+              "impact_statement": "Spring Boot input validation components are not accessible in application configuration",
+              "action_statement": "No action required - vulnerable code path not in execution"
+            },
+            {
+              "vulnerability": {
+                "name": "CVE-2025-41242", 
+                "@id": "https://www.cve.org/CVERecord?id=CVE-2025-41242"
+              },
+              "products": [
+                {
+                  "@id": "pkg:oci/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}",
+                  "identifiers": {
+                    "purl": "pkg:maven/org.springframework/spring-webmvc@6.1.21"
+                  }
+                }
+              ],
+              "status": "not_affected",
+              "justification": "vulnerable_code_not_in_execute_path",
+              "impact_statement": "Application does not expose file serving endpoints for path traversal",
+              "action_statement": "No action required - application architecture prevents exploitation"
+            }
+          ]
+        }
+        EOF
+        
+        # Validate VEX document
+        if jq empty "$VEX_FILE"; then
+          echo "✅ VEX document is valid JSON"
+          echo "📊 VEX covers $(jq '.statements | length' "$VEX_FILE") CVEs"
+        else
+          echo "❌ Generated VEX document is invalid"
+          exit 1
+        fi
+        
+    - name: Install ORAS
+      run: |
+        curl -LO "https://github.com/oras-project/oras/releases/latest/download/oras_linux_amd64.tar.gz"
+        mkdir -p oras-install/
+        tar -zxf oras_*.tar.gz -C oras-install/
+        sudo mv oras-install/oras /usr/local/bin/
+        rm -rf oras_*.tar.gz oras-install/
+        oras version
+        
+    - name: Push VEX as OCI artifact
+      run: |
+        IMAGE_TAG="${{ github.event.inputs.image_tag || 'latest' }}"
+        VEX_FILE="${{ steps.vex.outputs.VEX_FILE }}"
+        FULL_IMAGE_NAME="${{ env.IMAGE_NAME }}:${IMAGE_TAG}"
+        VEX_TAG="${FULL_IMAGE_NAME}-vex"
+        
+        echo "📤 Pushing VEX artifact..."
+        oras push "$VEX_TAG" \
+          "$VEX_FILE:application/vnd.openvex" \
+          --annotation "org.opencontainers.image.title=VEX Document for $FULL_IMAGE_NAME" \
+          --annotation "org.opencontainers.image.description=OpenVEX v0.2.0 vulnerability statements" \
+          --annotation "vex.openvex.dev/schema-version=v0.2.0" \
+          --annotation "vex.openvex.dev/target-image=$FULL_IMAGE_NAME" \
+          --annotation "vex.openvex.dev/target-digest=${{ steps.build.outputs.digest }}" \
+          --annotation "github.run-id=${{ github.run_id }}" \
+          --annotation "github.sha=${{ github.sha }}"
+          
+        echo "✅ VEX artifact pushed to: $VEX_TAG"
+        
+    - name: Create GitHub attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ${{ env.IMAGE_NAME }}
+        subject-digest: ${{ steps.build.outputs.digest }}
+        
+    - name: Upload VEX as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vex-document-${{ github.event.inputs.image_tag || 'latest' }}
+        path: ${{ steps.vex.outputs.VEX_FILE }}
+        retention-days: 90
+        
+    - name: Summary
+      run: |
+        echo "## 🚀 Build Complete with VEX Integration" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📦 Built Images:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Application**: \`${{ env.IMAGE_NAME }}:${{ github.event.inputs.image_tag || 'latest' }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **VEX Artifact**: \`${{ env.IMAGE_NAME }}:${{ github.event.inputs.image_tag || 'latest' }}-vex\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Digest**: \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🛡️ VEX Coverage:" >> $GITHUB_STEP_SUMMARY
+        echo "- CVE-2025-22235 (HIGH) - Spring Boot input validation" >> $GITHUB_STEP_SUMMARY
+        echo "- CVE-2025-41242 (MEDIUM) - Spring WebMVC path traversal" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔗 Usage:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+        echo "# Pull application image" >> $GITHUB_STEP_SUMMARY
+        echo "docker pull ${{ env.IMAGE_NAME }}:${{ github.event.inputs.image_tag || 'latest' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# Access VEX document" >> $GITHUB_STEP_SUMMARY
+        echo "oras pull ${{ env.IMAGE_NAME }}:${{ github.event.inputs.image_tag || 'latest' }}-vex" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
