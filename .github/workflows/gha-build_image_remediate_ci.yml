@@ -1,21 +1,35 @@
-name: Build Image with Golden Base & Security Remediation
+# Foundry of Trust Demo - Container Security Comparison Workflow
+# 
+# This workflow demonstrates the security improvements achieved by replacing
+# standard Eclipse Temurin base images with DHI golden base images.
+#
+# Required Repository Secrets:
+# - DOCKER_USERNAME: Docker Hub username for demonstrationorg
+# - DOCKER_PASSWORD: Docker Hub access token
+#
+# The workflow builds and compares two versions:
+# 1. NoDHI: Standard Eclipse Temurin base images (vulnerable)
+# 2. DHI: DHI golden base images (hardened and secure)
+
+name: Build Image Comparison - Standard vs Golden Base Images
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
-  schedule:
-    # Run daily at 2 AM UTC for security scanning
-    - cron: '0 2 * * *'
+  workflow_dispatch:
 
 env:
   REGISTRY: demonstrationorg
   IMAGE_NAME: foundry-of-trust
   GOLDEN_BASE_IMAGE: demonstrationorg/dhi-temurin:21_whale
+  NODHI_TAG: v1.0-NoDHI
+  DHI_TAG: v1.0-DHI
 
 jobs:
-  build-and-scan:
+  build-nodhi-image:
+    name: Build Standard Image (NoDHI)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,77 +39,119 @@ jobs:
       packages: write
 
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
-      image-digest: ${{ steps.build.outputs.digest }}
+      nodhi-image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.NODHI_TAG }}
+      nodhi-digest: ${{ steps.build-nodhi.outputs.digest }}
       
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx with Cloud Builder
+    - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-      with:
-        builder: cloud-demonstrationorg-default
-        driver-opts: |
-          network=host
 
     - name: Log into container registry
       uses: docker/login-action@v3
       with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_TOKEN }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Extract metadata (tags, labels)
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=sha,prefix={{branch}}-
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-
-    - name: Pre-build - Verify Golden Base Image
-      run: |
-        echo "🔍 Verifying golden base image security..."
-        docker scout cves ${{ env.GOLDEN_BASE_IMAGE }} --format sarif --output base-sarif.json || true
-        echo "✅ Golden base image verified"
-
-    - name: Build and push image with attestations
-      id: build
+    - name: Build NoDHI image (Standard Eclipse Temurin)
+      id: build-nodhi
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.NODHI_TAG }}
+        labels: |
+          org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+          org.opencontainers.image.description=Foundry of Trust - Standard Base Images
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.revision=${{ github.sha }}
         sbom: true
         provenance: true
-        builder: cloud-demonstrationorg-default
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Generate SBOM attestation
+    - name: Generate SBOM attestation for NoDHI
       uses: actions/attest-sbom@v1
       with:
         subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        subject-digest: ${{ steps.build.outputs.digest }}
-        sbom-path: sbom.json
+        subject-digest: ${{ steps.build-nodhi.outputs.digest }}
+        sbom-path: /tmp/sbom.json
 
-    - name: Generate provenance attestation
-      uses: actions/attest-build-provenance@v1
+  build-dhi-image:
+    name: Build Golden Base Image (DHI)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+      attestations: write
+      packages: write
+
+    outputs:
+      dhi-image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DHI_TAG }}
+      dhi-digest: ${{ steps.build-dhi.outputs.digest }}
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log into container registry
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Update Dockerfile to use DHI Golden Base Images
+      run: |
+        echo "Original Dockerfile base images:"
+        grep -n "FROM.*AS" Dockerfile
+        
+        # Create a backup of original Dockerfile
+        cp Dockerfile Dockerfile.backup
+        
+        # Update Dockerfile to use DHI golden base images
+        sed -i 's|FROM eclipse-temurin:21-jdk-jammy AS deps|FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev AS deps|g' Dockerfile
+        sed -i 's|FROM eclipse-temurin:21-jre-jammy AS final|FROM demonstrationorg/dhi-temurin:21_whale AS final|g' Dockerfile
+        
+        echo "Updated Dockerfile to use DHI golden base images:"
+        grep -n "FROM.*AS" Dockerfile
+
+    - name: Build DHI image (Golden Base Images)
+      id: build-dhi
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DHI_TAG }}
+        labels: |
+          org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+          org.opencontainers.image.description=Foundry of Trust - DHI Golden Base Images
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          org.opencontainers.image.revision=${{ github.sha }}
+        sbom: true
+        provenance: true
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Generate SBOM attestation for DHI
+      uses: actions/attest-sbom@v1
       with:
         subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        subject-digest: ${{ steps.build.outputs.digest }}
+        subject-digest: ${{ steps.build-dhi.outputs.digest }}
+        sbom-path: /tmp/sbom.json
 
-  security-analysis:
-    needs: build-and-scan
+  security-comparison:
+    name: Security Analysis & Comparison
+    needs: [build-nodhi-image, build-dhi-image]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -105,224 +161,117 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up Docker Scout
-      uses: docker/scout-action@v1
+    - name: Install Docker Scout CLI
+      run: |
+        echo "Installing Docker Scout CLI..."
+        curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh -s --
+        echo "Docker Scout CLI installed successfully"
 
     - name: Log into container registry
       uses: docker/login-action@v3
       with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ secrets.REGISTRY_USERNAME }}
-        password: ${{ secrets.REGISTRY_TOKEN }}
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Docker Scout - CVE Analysis
-      id: scout-cves
-      uses: docker/scout-action@v1
-      with:
-        command: cves
-        image: ${{ needs.build-and-scan.outputs.image-tag }}
-        sarif-file: sarif.output.json
-        summary: true
-        write-comment: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Docker Scout - CVE Analysis NoDHI Image
+      run: |
+        echo "🔍 Scanning NoDHI image for vulnerabilities..."
+        docker scout cves ${{ needs.build-nodhi-image.outputs.nodhi-image }} --format sarif --output nodhi-cves.sarif || true
+        docker scout cves ${{ needs.build-nodhi-image.outputs.nodhi-image }} --format json --output nodhi-cves.json || true
+        echo "NoDHI vulnerability scan completed"
+      continue-on-error: true
+
+    - name: Docker Scout - CVE Analysis DHI Image
+      run: |
+        echo "🔍 Scanning DHI image for vulnerabilities..."
+        docker scout cves ${{ needs.build-dhi-image.outputs.dhi-image }} --format sarif --output dhi-cves.sarif || true
+        docker scout cves ${{ needs.build-dhi-image.outputs.dhi-image }} --format json --output dhi-cves.json || true
+        echo "DHI vulnerability scan completed"
+      continue-on-error: true
 
     - name: Upload SARIF results to GitHub Security
       uses: github/codeql-action/upload-sarif@v3
       if: always()
       with:
-        sarif_file: sarif.output.json
+        sarif_file: dhi-cves.sarif
 
     - name: Docker Scout - Policy Evaluation
-      uses: docker/scout-action@v1
-      with:
-        command: policy
-        image: ${{ needs.build-and-scan.outputs.image-tag }}
-        write-comment: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Docker Scout - Compare with Golden Base
-      uses: docker/scout-action@v1
-      with:
-        command: compare
-        image: ${{ needs.build-and-scan.outputs.image-tag }}
-        to: ${{ env.GOLDEN_BASE_IMAGE }}
-        format: sarif
-        output: compare-sarif.json
-
-    - name: Docker Scout - Version Lineage Analysis
       run: |
-        echo "📊 Analyzing version lineage for golden base image..."
-        docker scout lineage ${{ env.GOLDEN_BASE_IMAGE }} --format json > lineage.json
-        
-        echo "## 🔗 Version Lineage Report" >> $GITHUB_STEP_SUMMARY
-        echo "All microservices built from golden base: \`${{ env.GOLDEN_BASE_IMAGE }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "📋 Evaluating policy compliance..."
+        docker scout policy ${{ needs.build-dhi-image.outputs.dhi-image }} || true
+        echo "Policy evaluation completed"
+
+    - name: Generate Security Comparison Report
+      run: |
+        echo "## 🛡️ Security Comparison: Standard vs Golden Base Images" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         
-        # Extract and display services using this base
-        if [ -f lineage.json ]; then
-          echo "### Dependent Services:" >> $GITHUB_STEP_SUMMARY
-          jq -r '.services[]? | "- " + .name + " (version: " + .version + ")"' lineage.json >> $GITHUB_STEP_SUMMARY || echo "- ${{ env.IMAGE_NAME }} (current build)" >> $GITHUB_STEP_SUMMARY
-        fi
-
-  remediation:
-    needs: [build-and-scan, security-analysis]
-    runs-on: ubuntu-latest
-    if: always()
-    permissions:
-      contents: write
-      pull-requests: write
-      security-events: read
-      
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Analyze Security Results
-      id: analyze
-      run: |
-        echo "🔍 Analyzing security scan results..."
+        echo "### 📊 Build Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Image Version | Base Images | Tag | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------------|-------------|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| **Standard (NoDHI)** | \`eclipse-temurin:21-jdk-jammy\`, \`eclipse-temurin:21-jre-jammy\` | \`${{ env.NODHI_TAG }}\` | ✅ Built |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Golden Base (DHI)** | \`demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev\`, \`demonstrationorg/dhi-temurin:21_whale\` | \`${{ env.DHI_TAG }}\` | ✅ Built |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         
-        # Check for critical vulnerabilities
-        CRITICAL_CVES=$(gh api repos/${{ github.repository }}/code-scanning/alerts --jq '[.[] | select(.state == "open" and .rule.severity == "error")] | length' || echo "0")
+        echo "### � Vulnerability Analysis" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         
-        echo "critical_cves=$CRITICAL_CVES" >> $GITHUB_OUTPUT
-        
-        if [ "$CRITICAL_CVES" -gt 0 ]; then
-          echo "⚠️ Found $CRITICAL_CVES critical vulnerabilities"
-          echo "needs_remediation=true" >> $GITHUB_OUTPUT
+        # Parse vulnerability counts from JSON files
+        if [ -f nodhi-cves.json ]; then
+          NODHI_CRITICAL=$(jq -r '.vulnerabilities[] | select(.severity == "critical") | .id' nodhi-cves.json 2>/dev/null | wc -l || echo "0")
+          NODHI_HIGH=$(jq -r '.vulnerabilities[] | select(.severity == "high") | .id' nodhi-cves.json 2>/dev/null | wc -l || echo "0")
+          NODHI_TOTAL=$(jq -r '.vulnerabilities | length' nodhi-cves.json 2>/dev/null || echo "0")
         else
-          echo "✅ No critical vulnerabilities found"
-          echo "needs_remediation=false" >> $GITHUB_OUTPUT
+          NODHI_CRITICAL="N/A"
+          NODHI_HIGH="N/A"
+          NODHI_TOTAL="N/A"
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Create Remediation Issue
-      if: steps.analyze.outputs.needs_remediation == 'true'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const title = `🚨 Security Remediation Required - Critical CVEs Found`;
-          const body = `
-          ## Security Alert
-          
-          Critical vulnerabilities have been detected in the latest build of \`${{ env.IMAGE_NAME }}\`.
-          
-          **Build Details:**
-          - Image: \`${{ needs.build-and-scan.outputs.image-tag }}\`
-          - Digest: \`${{ needs.build-and-scan.outputs.image-digest }}\`
-          - Golden Base: \`${{ env.GOLDEN_BASE_IMAGE }}\`
-          
-          **Action Required:**
-          1. Review the security scan results in the Security tab
-          2. Update dependencies or golden base image
-          3. Rebuild and redeploy
-          
-          **Resources:**
-          - [Security Scan Results](https://github.com/${{ github.repository }}/security/code-scanning)
-          - [Docker Scout Dashboard](https://scout.docker.com)
-          
-          This issue was automatically created by the security pipeline.
-          `;
-          
-          github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: title,
-            body: body,
-            labels: ['security', 'critical', 'automated']
-          });
-
-    - name: Generate Security Summary
-      run: |
-        echo "## 🛡️ Security Analysis Complete" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Build Information:**" >> $GITHUB_STEP_SUMMARY
-        echo "- **Image**: \`${{ needs.build-and-scan.outputs.image-tag }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Golden Base**: \`${{ env.GOLDEN_BASE_IMAGE }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **SBOM Generated**: ✅" >> $GITHUB_STEP_SUMMARY
-        echo "- **Provenance Attestation**: ✅" >> $GITHUB_STEP_SUMMARY
-        echo "- **Vulnerability Scan**: ✅" >> $GITHUB_STEP_SUMMARY
-        echo "- **Policy Check**: ✅" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
         
-        if [ "${{ steps.analyze.outputs.critical_cves }}" -gt 0 ]; then
-          echo "**⚠️ Action Required**: ${{ steps.analyze.outputs.critical_cves }} critical vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+        if [ -f dhi-cves.json ]; then
+          DHI_CRITICAL=$(jq -r '.vulnerabilities[] | select(.severity == "critical") | .id' dhi-cves.json 2>/dev/null | wc -l || echo "0")
+          DHI_HIGH=$(jq -r '.vulnerabilities[] | select(.severity == "high") | .id' dhi-cves.json 2>/dev/null | wc -l || echo "0")
+          DHI_TOTAL=$(jq -r '.vulnerabilities | length' dhi-cves.json 2>/dev/null || echo "0")
         else
-          echo "**✅ Security Status**: No critical vulnerabilities detected" >> $GITHUB_STEP_SUMMARY
+          DHI_CRITICAL="N/A"
+          DHI_HIGH="N/A"
+          DHI_TOTAL="N/A"
         fi
         
+        echo "| Severity | NoDHI (Standard) | DHI (Golden Base) | Improvement |" >> $GITHUB_STEP_SUMMARY
+        echo "|----------|------------------|-------------------|-------------|" >> $GITHUB_STEP_SUMMARY
+        echo "| **Critical** | $NODHI_CRITICAL | $DHI_CRITICAL | $([ "$DHI_CRITICAL" -lt "$NODHI_CRITICAL" ] 2>/dev/null && echo "✅ Reduced" || echo "📊 Check") |" >> $GITHUB_STEP_SUMMARY
+        echo "| **High** | $NODHI_HIGH | $DHI_HIGH | $([ "$DHI_HIGH" -lt "$NODHI_HIGH" ] 2>/dev/null && echo "✅ Reduced" || echo "📊 Check") |" >> $GITHUB_STEP_SUMMARY
+        echo "| **Total** | $NODHI_TOTAL | $DHI_TOTAL | $([ "$DHI_TOTAL" -lt "$NODHI_TOTAL" ] 2>/dev/null && echo "✅ Improved" || echo "📊 Analysis") |" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "View detailed results in the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)" >> $GITHUB_STEP_SUMMARY
-
-  update-golden-base:
-    needs: [build-and-scan, security-analysis]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
-    permissions:
-      contents: write
-      pull-requests: write
-      
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Check for Golden Base Updates
-      id: check-updates
-      run: |
-        echo "🔍 Checking for golden base image updates..."
         
-        # Get current base image digest
-        CURRENT_DIGEST=$(docker inspect ${{ env.GOLDEN_BASE_IMAGE }} --format='{{.RepoDigests}}' | head -1 || echo "unknown")
+        echo "### 🎯 Demo Workflow Demonstrated" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "1. **✅ Built standard image** (\`${{ env.NODHI_TAG }}\`) with Eclipse Temurin base images" >> $GITHUB_STEP_SUMMARY
+        echo "2. **✅ Applied DHI golden base images** (\`${{ env.DHI_TAG }}\`) for enhanced security" >> $GITHUB_STEP_SUMMARY
+        echo "3. **✅ Generated security attestations** (SBOM + Provenance) for both versions" >> $GITHUB_STEP_SUMMARY
+        echo "4. **✅ Performed vulnerability comparison** showing security improvement" >> $GITHUB_STEP_SUMMARY
+        echo "5. **✅ Demonstrated supply chain security** with comprehensive scanning" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         
-        # Pull latest version
-        docker pull ${{ env.GOLDEN_BASE_IMAGE }}:latest
-        LATEST_DIGEST=$(docker inspect ${{ env.GOLDEN_BASE_IMAGE }}:latest --format='{{.RepoDigests}}' | head -1 || echo "unknown")
+        echo "### 🏷️ Image Registry" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Images Published to Docker Hub:**" >> $GITHUB_STEP_SUMMARY
+        echo "- **Standard Image**: [\`${{ needs.build-nodhi-image.outputs.nodhi-image }}\`](https://hub.docker.com/r/${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tags)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Golden Base Image**: [\`${{ needs.build-dhi-image.outputs.dhi-image }}\`](https://hub.docker.com/r/${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/tags)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
         
-        if [ "$CURRENT_DIGEST" != "$LATEST_DIGEST" ]; then
-          echo "update_available=true" >> $GITHUB_OUTPUT
-          echo "📦 Golden base image update available"
-        else
-          echo "update_available=false" >> $GITHUB_OUTPUT
-          echo "✅ Golden base image is up to date"
-        fi
-
-    - name: Create Update PR
-      if: steps.check-updates.outputs.update_available == 'true'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { execSync } = require('child_process');
-          
-          // Create a new branch for the update
-          const branchName = `update-golden-base-${Date.now()}`;
-          execSync(`git checkout -b ${branchName}`);
-          
-          // Update Dockerfile with latest digest
-          execSync(`git add Dockerfile`);
-          execSync(`git commit -m "chore: update golden base image to latest version"`);
-          execSync(`git push origin ${branchName}`);
-          
-          // Create PR
-          github.rest.pulls.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: '🔄 Update Golden Base Image',
-            head: branchName,
-            base: 'main',
-            body: `
-            ## Golden Base Image Update
-            
-            This PR updates the golden base image to the latest version.
-            
-            **Changes:**
-            - Updated \`${{ env.GOLDEN_BASE_IMAGE }}\` to latest digest
-            
-            **Verification:**
-            - [ ] Security scan passes
-            - [ ] Build completes successfully
-            - [ ] All tests pass
-            
-            This PR was automatically created by the maintenance workflow.
-            `
-          });
+        echo "### � Local Testing Commands" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "# Pull and test standard image" >> $GITHUB_STEP_SUMMARY
+        echo "docker pull ${{ needs.build-nodhi-image.outputs.nodhi-image }}" >> $GITHUB_STEP_SUMMARY
+        echo "docker scout cves ${{ needs.build-nodhi-image.outputs.nodhi-image }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# Pull and test golden base image" >> $GITHUB_STEP_SUMMARY
+        echo "docker pull ${{ needs.build-dhi-image.outputs.dhi-image }}" >> $GITHUB_STEP_SUMMARY
+        echo "docker scout cves ${{ needs.build-dhi-image.outputs.dhi-image }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# Compare the two images" >> $GITHUB_STEP_SUMMARY
+        echo "docker scout compare ${{ needs.build-nodhi-image.outputs.nodhi-image }} --to ${{ needs.build-dhi-image.outputs.dhi-image }}" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY

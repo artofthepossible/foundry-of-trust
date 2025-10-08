@@ -13,7 +13,78 @@ This demo showcases a complete secure development workflow using:
 
 ## 🎯 Demo Flow
 
-### 1. Golden Base Image Strategy
+### 1. Developer Workflow: From Vulnerability to Security
+
+#### Step 1: Initial Build with Standard Images
+
+First, let's see what happens with standard container images:
+
+```dockerfile
+# Standard Eclipse Temurin images (current state)
+FROM eclipse-temurin:21-jdk-jammy AS deps
+FROM eclipse-temurin:21-jre-jammy AS final
+```
+
+Build with standard images to see vulnerabilities:
+
+```bash
+# Build with standard base images
+docker buildx build \
+  --builder cloud-demonstrationorg-default \
+  --sbom=true \
+  --provenance=true \
+  -t demonstrationorg/foundry-of-trust:v1.0-NoDHI \
+  .
+```
+
+#### Step 2: Local Security Scanning in VS Code
+
+**Before they even push**, Docker Scout runs locally via VS Code:
+
+```bash
+# Scan for vulnerabilities immediately after build
+docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
+```
+
+**What developers see:**
+- ⚠️ **Vulnerabilities flagged** - Critical CVEs in base images
+- 🚫 **Policy violations caught** - Non-compliant dependencies  
+- 💡 **Remediation guidance right there** - Fix suggestions in seconds, not days
+
+#### Step 3: Instant Fix with Golden Base Images
+
+Update to DHI golden base images for immediate security improvement:
+
+```dockerfile
+# Build Stage - Development tooling included
+FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev AS deps
+
+# Runtime Stage - Minimal, production-ready
+FROM demonstrationorg/dhi-temurin:21_whale AS final
+```
+
+#### Step 4: Secure Build and Push
+
+Build with golden base images and push to registry:
+
+```bash
+# Build with golden base images - instant security improvement
+docker buildx build \
+  --builder cloud-demonstrationorg-default \
+  --sbom=true \
+  --provenance=true \
+  -t demonstrationorg/foundry-of-trust:v1.0-DHI \
+  --push \
+  .
+```
+
+**Result:**
+- ✅ **Zero Critical CVEs** (thanks to golden base images)
+- ✅ **Policy compliance** achieved instantly
+- ✅ **Supply chain secured** with SBOM and provenance
+- ✅ **Ready for production** with minimal effort
+
+### 2. Golden Base Image Strategy
 
 Our application uses curated, hardened base images from the `demonstrationorg` registry:
 
@@ -31,7 +102,7 @@ FROM demonstrationorg/dhi-temurin:21_whale AS final
 - ✅ Reduced attack surface
 - ✅ Compliance-ready
 
-### 2. Instant Success Docker Build
+### 3. Instant Success Docker Build
 
 Build with Docker Build Cloud for enhanced performance and built-in security features:
 
@@ -41,7 +112,8 @@ docker buildx build \
   --builder cloud-demonstrationorg-default \
   --sbom=true \
   --provenance=true \
-  -t demonstrationorg/foundry-of-trust:v1.0 \
+  -t demonstrationorg/foundry-of-trust:v1.0-DHI \
+  --push \
   .
 ```
 
@@ -51,29 +123,31 @@ docker buildx build \
 - 🔒 **Provenance attestation** for build integrity
 - 📦 **Optimized layers** for efficient distribution
 
-### 3. Security Scanning with Docker Scout
+### 4. Security Scanning with Docker Scout
 
 Validate your image security posture:
 
 ```bash
-# Comprehensive vulnerability scan
-docker scout cves demonstrationorg/foundry-of-trust:v1.0
+# Compare: Standard vs Golden Base Images
+docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
+docker scout cves demonstrationorg/foundry-of-trust:v1.0-DHI
 
 # Policy evaluation
-docker scout policy demonstrationorg/foundry-of-trust:v1.0
+docker scout policy demonstrationorg/foundry-of-trust:v1.0-DHI
 
 # Compare against base image
 docker scout compare --to demonstrationorg/dhi-temurin:21_whale \
-  demonstrationorg/foundry-of-trust:v1.0
+  demonstrationorg/foundry-of-trust:v1.0-DHI
 ```
 
 **Expected Results:**
-- ✅ **Zero Critical CVEs** (thanks to golden base images)
+- ❌ **Multiple CVEs** in NoDHI version (standard images)
+- ✅ **Zero Critical CVEs** in DHI version (golden base images)
 - ✅ **Signed attestations** verified
 - ✅ **Policy compliance** passed
 - ✅ **Supply chain verified**
 
-### 4. Version Lineage Tracking
+### 5. Version Lineage Tracking
 
 Track all microservices built from the same golden base:
 
@@ -103,30 +177,53 @@ curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | 
 
 ### Build and Scan
 
-1. **Clone and build:**
+1. **Start with standard images to see vulnerabilities:**
    ```bash
    git clone <repo-url>
    cd foundry-of-trust
    
-   # Build with security attestations
+   # Build with standard base images (shows vulnerabilities)
    docker buildx build \
      --builder cloud-demonstrationorg-default \
      --sbom=true \
      --provenance=true \
-     -t demonstrationorg/foundry-of-trust:v1.0 \
+     -t demonstrationorg/foundry-of-trust:v1.0-NoDHI \
      .
    ```
 
-2. **Verify security:**
+2. **Scan for vulnerabilities locally:**
    ```bash
-   # Quick vulnerability check
-   docker scout quickview demonstrationorg/foundry-of-trust:v1.0
-   
-   # Detailed analysis
-   docker scout cves demonstrationorg/foundry-of-trust:v1.0
+   # See vulnerabilities in standard images
+   docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
    ```
 
-3. **Check lineage:**
+3. **Switch to golden base images:**
+   ```bash
+   # Update Dockerfile to use DHI golden base images
+   # FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev AS deps
+   # FROM demonstrationorg/dhi-temurin:21_whale AS final
+   
+   # Build with golden base images - instant security fix
+   docker buildx build \
+     --builder cloud-demonstrationorg-default \
+     --sbom=true \
+     --provenance=true \
+     -t demonstrationorg/foundry-of-trust:v1.0-DHI \
+     --push \
+     .
+   ```
+
+4. **Verify security improvement:**
+   ```bash
+   # Compare vulnerability scans
+   docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
+   docker scout cves demonstrationorg/foundry-of-trust:v1.0-DHI
+   
+   # Detailed analysis of golden image
+   docker scout policy demonstrationorg/foundry-of-trust:v1.0-DHI
+   ```
+
+5. **Check lineage:**
    ```bash
    # View all services using this base
    docker scout lineage demonstrationorg/dhi-temurin:21_whale
@@ -246,36 +343,52 @@ jobs:
 
 ## 📊 Demo Script
 
-### Scene 1: Golden Base Images
+### Scene 1: The Problem - Standard Images Have Vulnerabilities
 ```bash
-# Show available golden base images
-docker images demonstrationorg/dhi-temurin:*
-
-# Explain the multi-stage approach
+# Show current Dockerfile with standard images
 cat Dockerfile
-```
 
-### Scene 2: Instant Build Success
-```bash
-# Demonstrate build speed and success
-time docker buildx build \
+# Build with standard images
+docker buildx build \
   --builder cloud-demonstrationorg-default \
   --sbom=true \
   --provenance=true \
-  -t demonstrationorg/foundry-of-trust:v1.0 \
+  -t demonstrationorg/foundry-of-trust:v1.0-NoDHI \
+  .
+
+# Scan for vulnerabilities - show the problems
+docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
+```
+
+### Scene 2: The Solution - Golden Base Images
+```bash
+# Update Dockerfile to use golden base images
+# Show the difference in base images
+
+# Build with golden base images
+docker buildx build \
+  --builder cloud-demonstrationorg-default \
+  --sbom=true \
+  --provenance=true \
+  -t demonstrationorg/foundry-of-trust:v1.0-DHI \
+  --push \
   .
 ```
 
-### Scene 3: Security Validation
+### Scene 3: Security Validation - Before vs After
 ```bash
-# Show clean vulnerability report
-docker scout cves demonstrationorg/foundry-of-trust:v1.0
+# Compare vulnerability scans
+echo "=== BEFORE: Standard Images ==="
+docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
 
-# Verify signatures and attestations
-docker scout policy demonstrationorg/foundry-of-trust:v1.0
+echo "=== AFTER: Golden Base Images ==="
+docker scout cves demonstrationorg/foundry-of-trust:v1.0-DHI
+
+# Verify policy compliance
+docker scout policy demonstrationorg/foundry-of-trust:v1.0-DHI
 ```
 
-### Scene 4: Version Lineage
+### Scene 4: Version Lineage - Ecosystem Benefits
 ```bash
 # Show all microservices using golden base
 docker scout lineage demonstrationorg/dhi-temurin:21_whale
@@ -286,11 +399,12 @@ docker scout repo demonstrationorg
 
 ## 🎬 Key Demo Points
 
-1. **"Zero Touch" Security**: Golden base images eliminate common vulnerabilities
-2. **Build Confidence**: Instant success with no dependency issues
-3. **Supply Chain Transparency**: SBOM and provenance provide complete visibility
-4. **Continuous Monitoring**: Docker Scout provides ongoing security oversight
-5. **Ecosystem Benefits**: All microservices inherit security improvements
+1. **"Problem-Solution" Narrative**: Start with vulnerable standard images, then show instant fix with golden bases
+2. **Local Development Integration**: Docker Scout in VS Code catches issues before they reach CI/CD
+3. **Immediate Impact**: Zero-touch security improvement by switching base images
+4. **Supply Chain Transparency**: SBOM and provenance provide complete visibility
+5. **Continuous Monitoring**: Docker Scout provides ongoing security oversight
+6. **Ecosystem Benefits**: All microservices inherit security improvements automatically
 
 ## 🔧 Troubleshooting
 
