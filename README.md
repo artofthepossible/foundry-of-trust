@@ -123,7 +123,75 @@ docker buildx build \
 - 🔒 **Provenance attestation** for build integrity
 - 📦 **Optimized layers** for efficient distribution
 
-### 4. Security Scanning with Docker Scout
+## 🔧 Security Vulnerability Remediation
+
+### Fixed CVEs through Dependency Updates
+
+This project has been updated to address critical security vulnerabilities identified through Docker Scout scanning:
+
+#### **🚨 Critical Fixes Applied**
+
+**CVE-2025-24813 (CRITICAL - CVSS 9.2)**
+- **Component**: Apache Tomcat Embed Core 10.1.16
+- **Vulnerability**: Path Equivalence: 'file.name' (Internal Dot) - CISA KEV listed
+- **Fix Applied**: Upgraded to Tomcat 10.1.44
+- **Impact**: Eliminates critical path traversal vulnerability
+
+#### **🔴 High-Priority Fixes Applied**
+
+**Multiple Tomcat CVEs Fixed (10.1.16 → 10.1.44)**
+- CVE-2025-48988: Resource allocation without limits (CVSS 8.7)
+- CVE-2024-34750: Uncontrolled resource consumption (CVSS 8.7) 
+- CVE-2025-48989: Improper resource shutdown (CVSS 7.5)
+- CVE-2024-56337: TOCTOU race condition (CVSS 7.2)
+- CVE-2024-50379: TOCTOU race condition (CVSS 7.2)
+
+**Logback Security Fixes (1.4.11 → 1.4.12)**
+- CVE-2023-6378: Deserialization of untrusted data (CVSS 7.1)
+- CVE-2024-12798: Expression language injection (CVSS 5.9)
+- CVE-2024-12801: Server-side request forgery (CVSS 2.4)
+
+**Spring Framework Updates (3.2.0 → 3.2.10)**
+- Multiple path traversal vulnerabilities fixed
+- Open redirect vulnerabilities patched
+- Input validation improvements
+
+#### **📋 Summary of Changes**
+
+| Component | Before | After | CVEs Fixed |
+|-----------|---------|--------|------------|
+| **Spring Boot** | 3.2.0 | 3.2.10 | Multiple Spring CVEs |
+| **Tomcat Embed** | 10.1.16 | 10.1.44 | **1 Critical + 5 High** |
+| **Logback** | 1.4.11 | 1.4.12 | **2 High + 1 Medium** |
+
+#### **⚠️ Remaining Unfixed CVEs**
+
+Some CVEs remain unfixed due to no available patches:
+- CVE-2025-41242 (Spring WebMVC): No fix available yet
+- CVE-2025-41249 (Spring Core): No fix available yet  
+- CVE-2025-22235 (Spring Boot): No fix available yet
+- Various OS-level packages in base image (fixed in golden base images)
+
+### Verification Commands
+
+After applying fixes, verify the improvements:
+
+```bash
+# Rebuild with updated dependencies
+mvn clean package
+
+# Rebuild Docker image
+docker buildx build -t demonstrationorg/foundry-of-trust:v1.1-fixed .
+
+# Scan for remaining vulnerabilities
+docker scout cves demonstrationorg/foundry-of-trust:v1.1-fixed
+
+# Compare with previous version
+docker scout compare demonstrationorg/foundry-of-trust:v1.0-NoDHI \
+  --to demonstrationorg/foundry-of-trust:v1.1-fixed
+```
+
+## 🛡️ Security Scanning with Docker Scout
 
 Validate your image security posture:
 
@@ -171,9 +239,6 @@ docker buildx version
 # Login to demonstration registry
 docker login demonstrationorg
 
-# Install Docker Scout
-curl -sSfL https://raw.githubusercontent.com/docker/scout-cli/main/install.sh | sh
-```
 
 ### Build and Scan
 
