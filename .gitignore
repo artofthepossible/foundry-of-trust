@@ -1,0 +1,10 @@
+scripts/attach-targeted-vex.sh
+scripts/generate-vex.sh
+scripts/push-vex-registry.sh
+scripts/upload-vex-direct.sh
+scripts/verify-vex-attachment.sh
+scripts/assets/docker-compose.vex.yml
+scripts/assets/foundry-trust-vex-20251008180455.json
+scripts/assets/foundry-trust-vex-20251008180746.json
+scripts/assets/targeted-vex-20251008181815.json
+scripts/assets/VEX-ATTACHMENT-GUIDE.md

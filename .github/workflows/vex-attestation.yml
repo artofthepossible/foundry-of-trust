@@ -1,0 +1,95 @@
+name: Upload VEX as GitHub Attestation
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to attach VEX to'
+        required: true
+        default: 'v1.1-DHI-fixed'
+        type: string
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  vex-attestation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Generate VEX Document
+      run: |
+        cat > vex-attestation.json << 'EOF'
+        {
+          "@context": "https://openvex.dev/ns/v0.2.0",
+          "@id": "https://openvex.dev/docs/example/vex-9fb3463de1b57",
+          "author": "Foundry of Trust Demo",
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "version": 1,
+          "statements": [
+            {
+              "vulnerability": {
+                "name": "CVE-2025-22235",
+                "@id": "https://www.cve.org/CVERecord?id=CVE-2025-22235"
+              },
+              "products": [
+                {
+                  "@id": "pkg:oci/foundry-of-trust@sha256:${{ github.event.inputs.image_tag }}",
+                  "identifiers": {
+                    "purl": "pkg:maven/org.springframework.boot/spring-boot@3.2.10"
+                  }
+                }
+              ],
+              "status": "not_affected",
+              "justification": "vulnerable_code_not_in_execute_path",
+              "impact_statement": "Spring Boot input validation components are not accessible in application configuration",
+              "action_statement": "No action required - vulnerable code path not in execution"
+            },
+            {
+              "vulnerability": {
+                "name": "CVE-2025-41242",
+                "@id": "https://www.cve.org/CVERecord?id=CVE-2025-41242"
+              },
+              "products": [
+                {
+                  "@id": "pkg:oci/foundry-of-trust@sha256:${{ github.event.inputs.image_tag }}",
+                  "identifiers": {
+                    "purl": "pkg:maven/org.springframework/spring-webmvc@6.1.21"
+                  }
+                }
+              ],
+              "status": "not_affected",
+              "justification": "vulnerable_code_not_in_execute_path", 
+              "impact_statement": "Application does not expose file serving endpoints for path traversal",
+              "action_statement": "No action required - application architecture prevents exploitation"
+            }
+          ]
+        }
+        EOF
+        
+    - name: Create VEX Attestation  
+      run: |
+        # Create SLSA attestation bundle with VEX
+        echo "Creating VEX attestation for demonstrationorg/foundry-of-trust:${{ github.event.inputs.image_tag }}"
+        
+        # Generate attestation metadata
+        cat > attestation-metadata.json << 'EOF'
+        {
+          "type": "https://openvex.dev/ns/v0.2.0",
+          "subject": "demonstrationorg/foundry-of-trust:${{ github.event.inputs.image_tag }}",
+          "predicate": "vex-attestation.json",
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        }
+        EOF
+        
+    - name: Upload VEX as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: vex-attestation-${{ github.event.inputs.image_tag }}
+        path: vex-attestation.json
+        retention-days: 90

@@ -1,0 +1,50 @@
+#!/bin/bash
+# Pre-commit hook for VEX document validation
+# Place this in .git/hooks/pre-commit and make it executable
+
+set -e
+
+echo "🛡️ Running VEX validation checks..."
+
+# Check if VEX-related files have been modified
+VEX_FILES_CHANGED=$(git diff --cached --name-only | grep -E "(vex|VEX)" || true)
+DOCKERFILE_CHANGED=$(git diff --cached --name-only | grep -E "Dockerfile" || true)
+POM_CHANGED=$(git diff --cached --name-only | grep -E "pom.xml" || true)
+
+if [[ -n "$VEX_FILES_CHANGED" || -n "$DOCKERFILE_CHANGED" || -n "$POM_CHANGED" ]]; then
+    echo "📋 VEX-related files or dependencies changed, validating..."
+    
+    # Validate existing VEX documents
+    find . -name "*vex*.json" -type f | while read vex_file; do
+        echo "Validating $vex_file..."
+        if command -v jq >/dev/null 2>&1; then
+            if ! jq empty "$vex_file" 2>/dev/null; then
+                echo "❌ Invalid JSON in VEX file: $vex_file"
+                exit 1
+            fi
+            echo "✅ $vex_file is valid"
+        fi
+    done
+    
+    # Check VEX labels in Dockerfile
+    if [[ -n "$DOCKERFILE_CHANGED" ]]; then
+        echo "📋 Checking Dockerfile VEX labels..."
+        if grep -q "vex\." Dockerfile; then
+            echo "✅ VEX labels found in Dockerfile"
+        else
+            echo "⚠️ Consider adding VEX labels to Dockerfile for better automation"
+        fi
+    fi
+    
+    # Suggest VEX generation if dependencies changed
+    if [[ -n "$POM_CHANGED" ]]; then
+        echo "📋 Dependencies changed, consider regenerating VEX documents"
+        echo "   Run: ./scripts/generate-vex.sh"
+    fi
+    
+    echo "✅ VEX validation completed"
+else
+    echo "📋 No VEX-related changes detected, skipping validation"
+fi
+
+echo "🎉 Pre-commit VEX checks passed!"
