@@ -4,8 +4,8 @@
 # standard Eclipse Temurin base images with DHI golden base images.
 #
 # Required Repository Secrets:
-# - DOCKER_USERNAME: Docker Hub username for demonstrationorg
-# - DOCKER_PASSWORD: Docker Hub access token
+# - DOCKER_HUB_USERNAME: Docker Hub username for demonstrationorg (should be "demonstrationorg")
+# - DOCKER_HUB_TOKEN: Docker Hub access token (NOT password - create from Docker Hub Security settings)
 #
 # The workflow builds and compares two versions:
 # 1. NoDHI: Standard Eclipse Temurin base images (vulnerable)
@@ -52,8 +52,8 @@ jobs:
     - name: Log into container registry
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
     - name: Build NoDHI image (Standard Eclipse Temurin)
       id: build-nodhi
@@ -105,8 +105,8 @@ jobs:
     - name: Log into container registry
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
     - name: Update Dockerfile to use DHI Golden Base Images
       run: |
@@ -170,8 +170,8 @@ jobs:
     - name: Log into container registry
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
     - name: Docker Scout - CVE Analysis NoDHI Image
       run: |
