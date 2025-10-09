@@ -1,0 +1,28 @@
+image:
+  tag: "${image_tag}"
+
+replicaCount: ${replica_count}
+
+ingress:
+  enabled: ${ingress_enabled}
+  hosts:
+    - host: ${ingress_host}
+      paths:
+        - path: /
+          pathType: Prefix
+
+# Spring Boot actuator endpoints for health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus"
+
+# Resource limits for local development
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi

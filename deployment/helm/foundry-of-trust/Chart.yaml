@@ -1,0 +1,21 @@
+apiVersion: v2
+name: foundry-of-trust
+description: A Helm chart for Foundry of Trust Spring Boot application with VEX security attestations
+type: application
+version: 0.1.0
+appVersion: "v1.1-DHI-fixed"
+keywords:
+  - spring-boot
+  - vex
+  - security
+  - sbom
+  - provenance
+home: https://github.com/artofthepossible/foundry-of-trust
+sources:
+  - https://github.com/artofthepossible/foundry-of-trust
+maintainers:
+  - name: Foundry Team
+    email: team@foundry.example.com
+annotations:
+  category: Application
+  licenses: Apache-2.0
