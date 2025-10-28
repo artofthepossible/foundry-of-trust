@@ -20,8 +20,9 @@
 		<maven.compiler.target>21</maven.compiler.target>
 		<maven.compiler.release>21</maven.compiler.release>
 		<!-- Override versions to fix security vulnerabilities -->
-		<tomcat.version>10.1.44</tomcat.version>
-		<logback.version>1.5.19</logback.version>
+		<tomcat.version>10.1.48</tomcat.version>
+				<!-- Security: Explicit version management for critical dependencies -->
+		<logback.version>1.5.20</logback.version>
 		<spring-framework.version>6.2.11</spring-framework.version>
 		<!-- Testcontainers version -->
 		<testcontainers.version>1.20.4</testcontainers.version>
@@ -37,7 +38,7 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
-		<!-- Security fix: Override Tomcat version to fix critical CVE-2025-24813 -->
+		<!-- Security fix: Override Tomcat version to address potential vulnerabilities (updated to 10.1.48) -->
 		<dependency>
 			<groupId>org.apache.tomcat.embed</groupId>
 			<artifactId>tomcat-embed-core</artifactId>
