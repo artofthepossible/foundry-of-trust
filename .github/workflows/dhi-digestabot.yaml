@@ -44,7 +44,7 @@ jobs:
           exit 1
         fi
         
-        if docker manifest inspect docker.io/demonstrationorg/dhi-temurin:21_whale1 >/dev/null 2>&1; then
+        if docker manifest inspect docker.io/demonstrationorg/dhi-temurin:21-alpine3.22_whale1 >/dev/null 2>&1; then
           echo "✅ Runtime image access verified"
         else
           echo "❌ Cannot access runtime image - check authentication"
@@ -70,7 +70,7 @@ jobs:
           ## 🔍 Images Updated
           
           **Build Stage**: demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev  
-          **Runtime Stage**: demonstrationorg/dhi-temurin:21_whale1
+          **Runtime Stage**: demonstrationorg/dhi-temurin:21_whale
           
           ## 🛡️ Security Benefits
           - ✅ Latest security patches applied
@@ -94,7 +94,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Images Currently Tracked:" >> $GITHUB_STEP_SUMMARY
         echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a" >> $GITHUB_STEP_SUMMARY
-        echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821" >> $GITHUB_STEP_SUMMARY
+        echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21_whale@sha256:51ca318ee7dc42fefc6f1f3c82fa2a624ae98bbd44a5ba5923460ad1d0383ff0" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Security Benefits:" >> $GITHUB_STEP_SUMMARY
         echo "- 🔒 Images pinned to specific digests for reproducible builds" >> $GITHUB_STEP_SUMMARY

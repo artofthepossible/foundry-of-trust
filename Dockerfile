@@ -74,7 +74,8 @@ RUN java -Djarmode=layertools -jar target/app.jar extract --destination target/e
 #demonstrationorg/dhi-temurin:21-alpine3.22_whale1
 #FROM demonstrationorg/dhi-temurin:21_whale AS final
 #FROM demonstrationorg/dhi-temurin:21_whale@sha256:51ca318ee7dc42fefc6f1f3c82fa2a624ae98bbd44a5ba5923460ad1d0383ff0 AS final
-FROM demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821 AS final
+#FROM demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821 AS final
+FROM demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821 AS final
 
 # Our Runtime Image has a  non-privileged user that the app will run under UID=10001.
 
