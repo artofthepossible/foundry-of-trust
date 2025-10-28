@@ -117,11 +117,11 @@ gh pr list --label=dhi-images --state=open
 ### Image Digest Verification
 ```bash
 # Check current build image digest
-docker inspect demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev \
+docker inspect docker.io/demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev \
   --format='{{index .RepoDigests 0}}'
 
 # Check current runtime image digest
-docker inspect demonstrationorg/dhi-temurin:21_whale1 \
+docker inspect docker.io/demonstrationorg/dhi-temurin:21-alpine3.22_whale1 \
   --format='{{index .RepoDigests 0}}'
 ```
 
