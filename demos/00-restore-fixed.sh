@@ -15,7 +15,8 @@ NC='\033[0m' # No Color
 
 # Demo configuration
 DEMO_NAME="Restore Fixed POM (Security Patches Applied)"
-FIXED_BACKUP="demos/pom-fixed-backup.xml"
+#FIXED_BACKUP="demos/pom-fixed-backup.xml"
+FIXED_BACKUP="demos/pom-optimized.xml"
 CURRENT_POM="pom.xml"
 
 echo -e "${BLUE}============================================${NC}"
