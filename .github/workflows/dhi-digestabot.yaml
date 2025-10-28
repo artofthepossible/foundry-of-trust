@@ -47,11 +47,19 @@ jobs:
         echo "A pull request has been created to update the DHI base image digests." >> $GITHUB_STEP_SUMMARY
         echo "**Pull Request Number:** #${{ steps.digestabot.outputs.pull_request_number }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Images Tracked:" >> $GITHUB_STEP_SUMMARY
-        echo "- \`demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev\` (build stage)" >> $GITHUB_STEP_SUMMARY
-        echo "- \`demonstrationorg/dhi-temurin:21_whale\` (runtime stage)" >> $GITHUB_STEP_SUMMARY
+        echo "### Images Currently Tracked:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Stage:** \`demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Runtime Stage:** \`demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Security Benefits:" >> $GITHUB_STEP_SUMMARY
-        echo "- 🔒 Images pinned to specific digests for reproducibility" >> $GITHUB_STEP_SUMMARY
-        echo "- 🛡️ Automatic tracking of security updates" >> $GITHUB_STEP_SUMMARY
-        echo "- 📋 Audit trail of image changes" >> $GITHUB_STEP_SUMMARY
+        echo "- 🔒 Images pinned to specific digests for reproducible builds" >> $GITHUB_STEP_SUMMARY
+        echo "- 🛡️ Automatic tracking of DHI security updates" >> $GITHUB_STEP_SUMMARY
+        echo "- 📋 Complete audit trail of base image changes" >> $GITHUB_STEP_SUMMARY
+        echo "- 🚀 Supply chain integrity through cryptographic verification" >> $GITHUB_STEP_SUMMARY
+        echo "- ⬅️ Shift-left security with proactive vulnerability management" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### DHI Golden Images Benefits:" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Pre-hardened container foundation" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Security patches applied by experts" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Reduced attack surface compared to standard images" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Compliance with security best practices" >> $GITHUB_STEP_SUMMARY
