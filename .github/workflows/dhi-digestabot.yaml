@@ -43,7 +43,6 @@ jobs:
           echo "❌ Cannot access build image - check authentication"
           exit 1
         fi
-        
         if docker manifest inspect docker.io/demonstrationorg/dhi-temurin:21-alpine3.22_whale1 >/dev/null 2>&1; then
           echo "✅ Runtime image access verified"
         else
