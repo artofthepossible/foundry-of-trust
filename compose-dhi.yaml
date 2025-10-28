@@ -1,0 +1,57 @@
+# Docker Compose configuration for DHI (Docker Hardened Images) deployment
+# This uses the pre-built DHI image with enhanced security features
+services:
+  foundry-dhi:
+    # Use the DHI-built image with hardened base layers
+    image: demonstrationorg/local-foundry-of-trust-dhi:dhi
+    container_name: foundry-of-trust-dhi
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=production
+    # Security enhancements
+    security_opt:
+      - no-new-privileges:true
+    # Run as non-root user (DHI images have this configured)
+    # user: "1001:1001"  # Uncomment if needed
+    # Resource limits for production safety
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+    # Health check to ensure application is ready
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Optional: Add Redis for testing with Testcontainers pattern
+    depends_on:
+      - redis
+
+  # Redis service for application dependencies
+  redis:
+    image: redis:alpine
+    container_name: foundry-redis
+    ports:
+      - "6379:6379"
+    # Security hardening for Redis
+    security_opt:
+      - no-new-privileges:true
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
