@@ -71,6 +71,7 @@ jobs:
           **Build Stage**: demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev  
           **Runtime Stage**: demonstrationorg/dhi-temurin:21-alpine3.22_whale1
           
+
           ## 🛡️ Security Benefits
           - ✅ Latest security patches applied
           - ✅ Vulnerability fixes included
