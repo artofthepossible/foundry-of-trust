@@ -1,7 +1,24 @@
 #!/bin/bash
 
 # 🏗️ Local Build Demo - Standard Base Images (No DHI)
-# This script demonstrates building a container image using standard Eclipse Temurin base images
+# This script demonstrates buildprint_status "EXPLAIN" "🏷️ -t demonstrationorg/local-foundry-of-trust:nodhi"
+echo "   → Tags the built image with a specific na# Execute the build command
+if eval "$BUILD_CMD";print_status "INFO" "Next steps:"
+echo "   → Pull and test: docker pull demonstrationorg/local-foundry-of-trust:nodhi"
+echo "   → Run: docker run -p 8080:8080 demonstrationorg/local-foundry-of-trust:nodhi"
+echo "   → Inspect security: docker buildx imagetools inspect demonstrationorg/local-foundry-of-trust:nodhi"
+echo "   → Compare with DHI: Run ./demos/02-build-local-dhi.sh to see security differences"
+echo "   → Security scan: Use Docker Scout or similar tools to identify vulnerabilities"n
+    print_status "SUCCESS" "Standard build and push completed successfully!"
+    print_status "SUCCESS" "Image pushed to demonstrationorg/local-foundry-of-trust:nodhi"
+else
+    print_status "ERROR" "Standard build and push failed"
+    exit 1
+fitag"
+echo "   → 'demonstrationorg' = organization namespace"
+echo "   → 'local-foundry-of-trust' = repository name" 
+echo "   → 'nodhi' = tag indicating standard (non-DHI) base images"
+echo "   → Will be pushed to demonstrationorg/local-foundry-of-trust repository" container image using standard Eclipse Temurin base images
 # without DHI (Demonstration Hardware Infrastructure) golden base images for comparison.
 
 set -e
@@ -63,13 +80,14 @@ echo ""
 # Command breakdown explanation
 print_header "📖 Command Breakdown Explanation"
 
-echo "We'll execute this Docker Buildx command:"
+echo "We'll execute this Docker Buildx command with cloud builder and registry push:"
 echo ""
 print_status "COMMAND" "docker buildx build \\"
 print_status "COMMAND" "  --builder cloud-demonstrationorg-default \\"
 print_status "COMMAND" "  --sbom=true \\"
 print_status "COMMAND" "  --provenance=true \\"
-print_status "COMMAND" "  -t demonstrationorg/local-foundry-of-trust-nodhi:nodhi \\"
+print_status "COMMAND" "  --push \\"
+print_status "COMMAND" "  -t demonstrationorg/local-foundry-of-trust:nodhi \\"
 print_status "COMMAND" "  -f \"DockerfileNoDHI\" \\"
 print_status "COMMAND" "  ."
 echo ""
@@ -104,10 +122,15 @@ echo "   → 'local-foundry-of-trust-nodhi' = image name"
 echo "   → 'nodhi' = tag indicating no DHI golden base images used"
 echo ""
 
-print_status "EXPLAIN" "📄 -f \"DockerfileNoDHI\""
-echo "   → Specifies the Dockerfile to use for building"
-echo "   → DockerfileNoDHI uses standard Eclipse Temurin base images"
-echo "   → Compare with regular Dockerfile that uses DHI golden images"
+print_status "EXPLAIN" "🏗️ -f \"DockerfileNoDHI\""
+echo "   → Specifies which Dockerfile to use for the build"
+echo "   → Uses standard Eclipse Temurin base images"
+echo "   → No DHI (Docker Hardened Images) golden base images"
+echo ""
+print_status "EXPLAIN" "🚀 --push"
+echo "   → Pushes the built image directly to the registry"
+echo "   → Eliminates need for separate docker push command"
+echo "   → Works with Docker Build Cloud for optimized performance"
 echo ""
 
 print_status "EXPLAIN" "📂 . (build context)"
@@ -210,7 +233,7 @@ BUILD_CMD="docker buildx build"
 if [[ -n "$BUILDER_ARG" ]]; then
     BUILD_CMD="$BUILD_CMD $BUILDER_ARG"
 fi
-BUILD_CMD="$BUILD_CMD --sbom=true --provenance=true -t demonstrationorg/local-foundry-of-trust-nodhi:nodhi -f DockerfileNoDHI ."
+BUILD_CMD="$BUILD_CMD --sbom=true --provenance=true --push -t demonstrationorg/local-foundry-of-trust:nodhi -f DockerfileNoDHI ."
 
 print_status "COMMAND" "Executing: $BUILD_CMD"
 echo "----------------------------------------"
@@ -228,25 +251,12 @@ echo ""
 # Post-build analysis
 print_header "📊 Build Results & Analysis"
 
-print_status "INFO" "Analyzing the built image..."
+print_status "INFO" "Analyzing the standard base image build results..."
 
-# Check if image was created
-if docker images demonstrationorg/local-foundry-of-trust-nodhi:nodhi >/dev/null 2>&1; then
-    print_status "SUCCESS" "Image created successfully"
-    
-    # Show image details
-    echo ""
-    print_status "INFO" "Image details:"
-    docker images demonstrationorg/local-foundry-of-trust-nodhi:nodhi --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
-    echo ""
-    
-    # Show layers (if possible)
-    print_status "INFO" "Image layers and history:"
-    docker history demonstrationorg/local-foundry-of-trust-nodhi:nodhi --format "table {{.CreatedBy}}\t{{.Size}}" | head -10
-    
-else
-    print_status "WARNING" "Image verification failed"
-fi
+# Since we pushed to registry, provide registry information
+print_status "SUCCESS" "Image successfully pushed to registry"
+print_status "INFO" "Registry: demonstrationorg/local-foundry-of-trust:nodhi"
+print_status "INFO" "Security artifacts: SBOM and Provenance attached"
 
 echo ""
 

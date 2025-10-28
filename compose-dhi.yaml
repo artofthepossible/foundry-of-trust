@@ -3,7 +3,7 @@
 services:
   foundry-dhi:
     # Use the DHI-built image with hardened base layers
-    image: demonstrationorg/local-foundry-of-trust-dhi:dhi
+    image: demonstrationorg/local-foundry-of-trust:dhi
     container_name: foundry-of-trust-dhi
     ports:
       - "8080:8080"
@@ -31,27 +31,6 @@ services:
       retries: 3
       start_period: 60s
     # Optional: Add Redis for testing with Testcontainers pattern
-    depends_on:
-      - redis
+  
 
-  # Redis service for application dependencies
-  redis:
-    image: redis:alpine
-    container_name: foundry-redis
-    ports:
-      - "6379:6379"
-    # Security hardening for Redis
-    security_opt:
-      - no-new-privileges:true
-    # Resource limits
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.25'
-    # Health check
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+  

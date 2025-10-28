@@ -10,7 +10,7 @@
 services:
   server:
     # Use the DHI-built image instead of building from Dockerfile
-    image: demonstrationorg/local-foundry-of-trust-dhi:dhi
+    image: demonstrationorg/local-foundry-of-trust:dhi
     # Alternative: Build with specific Dockerfile
     # build:
     #   context: .

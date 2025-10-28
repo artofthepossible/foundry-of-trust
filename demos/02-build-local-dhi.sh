@@ -109,13 +109,14 @@ echo ""
 # Command breakdown explanation
 print_header "📖 DHI Command Breakdown"
 
-echo "We'll execute this enhanced Docker Buildx command:"
+echo "We'll execute this enhanced Docker Buildx cloud command:"
 echo ""
 print_status "COMMAND" "docker buildx build \\"
 print_status "COMMAND" "  --builder cloud-demonstrationorg-default \\"
 print_status "COMMAND" "  --sbom=true \\"
 print_status "COMMAND" "  --provenance=true \\"
-print_status "COMMAND" "  -t demonstrationorg/local-foundry-of-trust-dhi:dhi \\"
+print_status "COMMAND" "  --push \\"
+print_status "COMMAND" "  -t demonstrationorg/local-foundry-of-trust:dhi \\"
 print_status "COMMAND" "  -f \"Dockerfile\" \\"
 print_status "COMMAND" "  ."
 echo ""
@@ -124,6 +125,9 @@ print_status "EXPLAIN" "🆚 Key Difference from Previous Demo:"
 echo "   → Uses 'Dockerfile' (with DHI golden images) instead of 'DockerfileNoDHI'"
 echo "   → Tags image as 'dhi' instead of 'nodhi' for clear identification"
 echo "   → Builds upon pre-hardened, security-validated base images"
+echo "   → Uses --push to push directly to registry with cloud builder"
+echo "   → Leverages Docker Build Cloud for enhanced build performance"
+echo "   → Pushes to same repository (demonstrationorg/local-foundry-of-trust) with different tag"
 echo ""
 
 # DHI Benefits Deep Dive
@@ -151,6 +155,14 @@ echo "   ✅ Faster security validation and compliance"
 echo "   ✅ Reduced security debt and technical debt"
 echo "   ✅ Focus on application logic, not infrastructure security"
 echo "   ✅ Consistent security standards across teams"
+echo ""
+
+print_status "SECURITY" "☁️ Docker Build Cloud Benefits:"
+echo "   ✅ Faster builds with optimized cloud infrastructure"
+echo "   ✅ Automatic registry push with security attestations"
+echo "   ✅ Enhanced build performance and reliability"
+echo "   ✅ Native SBOM and provenance generation"
+echo "   ✅ Centralized build artifacts with security metadata"
 echo ""
 
 # Shift-Left Security
@@ -270,6 +282,7 @@ print_header "🚀 Executing DHI Hardened Build"
 
 print_status "INFO" "Building with DHI golden base images for enhanced security..."
 print_status "INFO" "This demonstrates starting with a known good, hardened foundation"
+print_status "INFO" "Using Docker Build Cloud for optimized build performance and registry push"
 echo ""
 
 # Construct and display the command
@@ -277,16 +290,17 @@ BUILD_CMD="docker buildx build"
 if [[ -n "$BUILDER_ARG" ]]; then
     BUILD_CMD="$BUILD_CMD $BUILDER_ARG"
 fi
-BUILD_CMD="$BUILD_CMD --sbom=true --provenance=true -t demonstrationorg/local-foundry-of-trust-dhi:dhi -f Dockerfile ."
+BUILD_CMD="$BUILD_CMD --sbom=true --provenance=true --push -t demonstrationorg/local-foundry-of-trust:dhi -f Dockerfile ."
 
 print_status "COMMAND" "Executing: $BUILD_CMD"
 echo "----------------------------------------"
 
 # Execute the build command
 if eval "$BUILD_CMD"; then
-    print_status "SUCCESS" "DHI hardened build completed successfully!"
+    print_status "SUCCESS" "DHI hardened build and push completed successfully!"
+    print_status "SUCCESS" "Image pushed to demonstrationorg/local-foundry-of-trust:dhi"
 else
-    print_status "ERROR" "DHI hardened build failed"
+    print_status "ERROR" "DHI hardened build and push failed"
     exit 1
 fi
 
@@ -297,30 +311,10 @@ print_header "📊 DHI Build Results & Security Analysis"
 
 print_status "INFO" "Analyzing the DHI hardened image..."
 
-# Check if image was created
-if docker images demonstrationorg/local-foundry-of-trust-dhi:dhi >/dev/null 2>&1; then
-    print_status "SUCCESS" "DHI hardened image created successfully"
-    
-    # Show image details
-    echo ""
-    print_status "INFO" "DHI hardened image details:"
-    docker images demonstrationorg/local-foundry-of-trust-dhi:dhi --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}"
-    echo ""
-    
-    # Compare with non-DHI image if it exists
-    if docker images demonstrationorg/local-foundry-of-trust-nodhi:nodhi >/dev/null 2>&1; then
-        print_status "INFO" "Security comparison - DHI vs Standard images:"
-        echo ""
-        echo -e "${BOLD}Image Sizes Comparison:${NC}"
-        docker images demonstrationorg/local-foundry-of-trust-* --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"
-        echo ""
-        print_status "SECURITY" "🛡️ DHI images may be larger due to additional security hardening"
-        print_status "SECURITY" "🔒 Size increase is justified by enhanced security posture"
-    fi
-    
-else
-    print_status "WARNING" "DHI image verification failed"
-fi
+# Since we pushed to registry, check if image was pushed successfully
+print_status "INFO" "Image has been pushed to registry with security attestations"
+print_status "SUCCESS" "Registry: demonstrationorg/local-foundry-of-trust:dhi"
+print_status "SUCCESS" "SBOM and provenance attestations included with pushed image"
 
 echo ""
 
@@ -393,8 +387,11 @@ echo "   🔍 Proactive vulnerability management workflow"
 echo ""
 
 print_status "INFO" "Next steps for security excellence:"
-echo "   → Test: docker run -p 8080:8080 demonstrationorg/local-foundry-of-trust-dhi:dhi"
-echo "   → Compare: Security scan results vs non-DHI image"
+echo "   → Pull and test: docker pull demonstrationorg/local-foundry-of-trust:dhi"
+echo "   → Run locally: docker run -p 8080:8080 demonstrationorg/local-foundry-of-trust:dhi"
+echo "   → Verify attestations: docker buildx imagetools inspect demonstrationorg/local-foundry-of-trust:dhi"
+echo "   → Compare images: docker buildx imagetools inspect demonstrationorg/local-foundry-of-trust:nodhi"
+echo "   → Security comparison: Compare vulnerability scans between :nodhi and :dhi tags"
 echo "   → Implement: Pre-commit security validation hooks"
 echo "   → Adopt: DHI images as your team's default base images"
 echo ""
@@ -403,7 +400,8 @@ print_security_emphasis "REMEMBER: Security is everyone's responsibility, starti
 
 print_status "HABIT" "🎯 Key Takeaway: Start with known good hardened images, validate left of commit!"
 echo ""
-print_status "INFO" "Security artifacts generated:"
-echo "   → SBOM: Hardened component inventory for compliance"
-echo "   → Provenance: Build attestation with security validation"
+print_status "INFO" "Security artifacts generated and pushed:"
+echo "   → SBOM: Hardened component inventory for compliance (attached to registry)"
+echo "   → Provenance: Build attestation with security validation (attached to registry)"
 echo "   → DHI Benefits: Enhanced security posture from foundation up"
+echo "   → Registry Push: Image available for deployment with security attestations"
