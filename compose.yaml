@@ -9,8 +9,12 @@
 # https://github.com/docker/awesome-compose
 services:
   server:
-    build:
-      context: .
+    # Use the DHI-built image instead of building from Dockerfile
+    image: demonstrationorg/local-foundry-of-trust-dhi:dhi
+    # Alternative: Build with specific Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     ports:
       - 8080:8080
 
