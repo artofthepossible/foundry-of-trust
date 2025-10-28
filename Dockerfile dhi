@@ -8,7 +8,7 @@
 #FROM eclipse-temurin:21-jdk-jammy AS deps
 
 # Update to DHI golden base images for immediate security improvement:
-FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev AS deps
+FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:7c2d7e041fc61d3e9f936aa0e697684bbe9549aa3eeea5a8a279910376ee80ee AS deps
 
 WORKDIR /build
 
@@ -69,21 +69,11 @@ RUN java -Djarmode=layertools -jar target/app.jar extract --destination target/e
 #FROM eclipse-temurin:21-jre-jammy AS final
 
 # Update to DHI golden base images for immediate security improvement:
+# Note: Replace with actual digest after running: docker inspect demonstrationorg/dhi-temurin:21_whale --format='{{index .RepoDigests 0}}'
 FROM demonstrationorg/dhi-temurin:21_whale AS final
 
 # Our Runtime Image has a  non-privileged user that the app will run under UID=10001.
-#ARG UID=10001
-#RUN adduser \
-#    --disabled-password \
-#    --gecos "" \
-#    --home "/nonexistent" \
-#    --shell "/sbin/nologin" \
-#    --no-create-home \
-#    --uid "${UID}" \
-#    appuser
-#USER appuser
-# Add VEX document to image
-COPY scripts/assets/targeted-vex-20251008181815.json /app/vex.json
+
 
 # Add VEX metadata as labels
 LABEL vex.openvex.dev/schema-version="v0.2.0"

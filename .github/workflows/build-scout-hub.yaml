@@ -129,8 +129,7 @@ jobs:
           category: Docker-Scout
       - run: echo "✅ Upload SARIF report status is ${{ job.status }}."
 
-      - name: Job Completion Message
-      - run: echo "🏁 The job has completed with a status of ${{ job.status }}."
+
 
 
 

@@ -1,0 +1,57 @@
+name: DHI Base Image Digestabot
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Sundays at midnight UTC to check for DHI base image updates
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  dhi-digestabot:
+    name: DHI Base Image Digestabot
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+
+    steps:
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
+      with:
+        egress-policy: audit
+
+    - name: Checkout repository
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    # Run digestabot specifically for the DHI Dockerfile
+    - name: Update DHI base image digests
+      uses: chainguard-dev/digestabot@a3b776c1ca57d3127c85578cde8fef6eed3c75d3 # v1.2.3
+      id: digestabot
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        include-files: "Dockerfile dhi"
+        title-for-pr: 'Update DHI base image digests'
+        commit-message: 'Update DHI base image digests'
+        branch-for-pr: dhi-digestabot
+        labels-for-pr: 'dependencies,security,dhi-images'
+
+    - name: Summary
+      if: steps.digestabot.outputs.pull_request_number
+      run: |
+        echo "## DHI Base Image Update" >> $GITHUB_STEP_SUMMARY
+        echo "A pull request has been created to update the DHI base image digests." >> $GITHUB_STEP_SUMMARY
+        echo "**Pull Request Number:** #${{ steps.digestabot.outputs.pull_request_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Images Tracked:" >> $GITHUB_STEP_SUMMARY
+        echo "- \`demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev\` (build stage)" >> $GITHUB_STEP_SUMMARY
+        echo "- \`demonstrationorg/dhi-temurin:21_whale\` (runtime stage)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Security Benefits:" >> $GITHUB_STEP_SUMMARY
+        echo "- 🔒 Images pinned to specific digests for reproducibility" >> $GITHUB_STEP_SUMMARY
+        echo "- 🛡️ Automatic tracking of security updates" >> $GITHUB_STEP_SUMMARY
+        echo "- 📋 Audit trail of image changes" >> $GITHUB_STEP_SUMMARY
