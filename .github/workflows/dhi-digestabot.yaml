@@ -28,17 +28,62 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
+    - name: Login to Docker Hub
+      uses: docker/login-action@3d58c274f17dffee475a5520cbe67f0a882c4dbb # v3.3.0
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+    - name: Verify DHI image access
+      run: |
+        echo "Testing access to DHI base images..."
+        if docker manifest inspect demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev >/dev/null 2>&1; then
+          echo "✅ Build image access verified"
+        else
+          echo "❌ Cannot access build image - check authentication"
+          exit 1
+        fi
+        
+        if docker manifest inspect demonstrationorg/dhi-temurin:21_whale1 >/dev/null 2>&1; then
+          echo "✅ Runtime image access verified"
+        else
+          echo "❌ Cannot access runtime image - check authentication"
+          exit 1
+        fi
+
     # Run digestabot specifically for the DHI Dockerfile
     - name: Update DHI base image digests
       uses: chainguard-dev/digestabot@a3b776c1ca57d3127c85578cde8fef6eed3c75d3 # v1.2.3
       id: digestabot
       with:
+        working-dir: "."
         token: ${{ secrets.GITHUB_TOKEN }}
-        include-files: "Dockerfile dhi"
         title-for-pr: 'Update DHI base image digests'
         commit-message: 'Update DHI base image digests'
         branch-for-pr: dhi-digestabot
         labels-for-pr: 'dependencies,security,dhi-images'
+        description-for-pr: |
+          🛡️ **DHI Base Image Security Update**
+          
+          This automated PR updates our DHI (Docker Hardened Images) base image digests to the latest secure versions.
+          
+          ## 🔍 Images Updated
+          
+          **Build Stage**: demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev  
+          **Runtime Stage**: demonstrationorg/dhi-temurin:21_whale1
+          
+          ## 🛡️ Security Benefits
+          - ✅ Latest security patches applied
+          - ✅ Vulnerability fixes included
+          - ✅ Supply chain integrity maintained
+          - ✅ Reproducible builds preserved
+          
+          ## 🔗 DHI Golden Images
+          These images are part of our DHI (Docker Hardened Images) golden image strategy, providing:
+          - Pre-hardened base configurations
+          - Reduced attack surface
+          - Enterprise security standards
+          - Automated security updates
 
     - name: Summary
       if: steps.digestabot.outputs.pull_request_number
@@ -48,8 +93,8 @@ jobs:
         echo "**Pull Request Number:** #${{ steps.digestabot.outputs.pull_request_number }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Images Currently Tracked:" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build Stage:** \`demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a\`" >> $GITHUB_STEP_SUMMARY
-        echo "- **Runtime Stage:** \`demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821\`" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a" >> $GITHUB_STEP_SUMMARY
+        echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Security Benefits:" >> $GITHUB_STEP_SUMMARY
         echo "- 🔒 Images pinned to specific digests for reproducible builds" >> $GITHUB_STEP_SUMMARY

@@ -150,6 +150,18 @@ else
     REPO_AVAILABLE=true
 fi
 
+# Check Docker Hub authentication
+print_status "INFO" "Checking Docker Hub authentication..."
+if docker manifest inspect demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev >/dev/null 2>&1; then
+    print_status "SUCCESS" "Docker Hub authentication working"
+    DOCKER_AUTH_AVAILABLE=true
+else
+    print_status "WARNING" "Docker Hub authentication required"
+    print_status "INFO" "The DHI images require authentication to demonstrationorg registry"
+    print_status "INFO" "Configure GitHub secrets: DOCKER_HUB_USERNAME and DOCKER_HUB_TOKEN"
+    DOCKER_AUTH_AVAILABLE=false
+fi
+
 echo ""
 
 # Manual Trigger Section
