@@ -57,11 +57,12 @@ jobs:
       id: digestabot
       with:
         working-dir: "."
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.KUFULI_TOKEN }}
         title-for-pr: 'Update DHI base image digests'
         commit-message: 'Update DHI base image digests'
         branch-for-pr: dhi-digestabot
         labels-for-pr: 'dependencies,security,dhi-images'
+        signoff: false
         description-for-pr: |
           🛡️ **DHI Base Image Security Update**
           
