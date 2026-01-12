@@ -96,7 +96,7 @@ jobs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Images Currently Tracked:" >> $GITHUB_STEP_SUMMARY
         echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a" >> $GITHUB_STEP_SUMMARY
-        echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:43cccbcd4543fa7da9a210950c2a53543fe29f99a637705f6904f0d12814b006" >> $GITHUB_STEP_SUMMARY
+        echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:cc7b2b6f04e00ffd82693f3a93bac42db20682bb2f4434cdf55779732afdc796" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Security Benefits:" >> $GITHUB_STEP_SUMMARY
         echo "- 🔒 Images pinned to specific digests for reproducible builds" >> $GITHUB_STEP_SUMMARY
