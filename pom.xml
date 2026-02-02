@@ -22,7 +22,7 @@
 		
 		<!-- Security: Version overrides for CVE fixes with minimal footprint -->
 		<tomcat.version>10.1.48</tomcat.version>
-		<logback.version>1.5.20</logback.version>
+		<logback.version>1.5.25</logback.version>
 		<spring-framework.version>6.2.11</spring-framework.version>
 		<testcontainers.version>1.20.4</testcontainers.version>
 		
