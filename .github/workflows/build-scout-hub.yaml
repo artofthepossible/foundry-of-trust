@@ -142,7 +142,7 @@ jobs:
       # Upload security results
       - name: Upload SARIF report
         id: docker-scout-sarif
-        uses: github/codeql-action/upload-sarif@3de4f15a9373e0f2e2b1b2e5c2f6e4f5f8e9d0c1
+        uses: github/codeql-action/upload-sarif@v4.0.0
         with:
           sarif_file: docker-scout.sarif
           category: Docker-Scout
