@@ -73,7 +73,7 @@ RUN java -Djarmode=layertools -jar target/app.jar extract --destination target/e
 #demonstrationorg/dhi-temurin:21-alpine3.21
 #demonstrationorg/dhi-temurin:21-alpine3.22_whale1
 #FROM demonstrationorg/dhi-temurin:21_whale AS final
-#FROM demonstrationorg/dhi-temurin:21_whale@sha256:de95651a33e37211987474637d20adf087834c758bf64d962c50d91ae9e5f5b2 AS final
+#FROM demonstrationorg/dhi-temurin:21_whale@sha256:aa92ad8c3bc333756a445af424de075dcdcbc81e94e2345e01f5631adba7eec0 AS final
 #FROM demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821 AS final
 FROM demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:b40246be5f213ba0aa548a8ab1b7536e1c6e8909000acbdab30157b12579249e AS final
 
