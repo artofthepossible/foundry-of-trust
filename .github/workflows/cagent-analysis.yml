@@ -1,0 +1,27 @@
+name: CAgent Code Analysis
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Analyze Code Changes
+        uses: docker/cagent-action@v1.1.7
+
+
+        with:
+          api-key: ${{ secrets.CAGENT_API_KEY }}
+          org: 
