@@ -25,4 +25,3 @@ jobs:
           org: 
           AGENT: CAgent Code Analysis # Replace with the required agent name
           CAGENT_VERSION: v1.2.3 # Ensure this matches the required format
-\
