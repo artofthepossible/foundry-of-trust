@@ -20,8 +20,7 @@ jobs:
 
       - name: Analyze Code Changes
         uses: docker/cagent-action@v1.1.7
-        with:
+        env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          org: 
-          AGENT: CAgent Code Analysis # Replace with the required agent name
-          CAGENT_VERSION: v1.2.3 # Ensure matches the required format
+        with:
+          agent: CAgent Code Analysis # Replace with the required agent name
