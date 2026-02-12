@@ -20,8 +20,6 @@ jobs:
 
       - name: Analyze Code Changes
         uses: docker/cagent-action@v1.1.7
-
-
         with:
           api-key: ${{ secrets.CAGENT_API_KEY }}
           org: 
