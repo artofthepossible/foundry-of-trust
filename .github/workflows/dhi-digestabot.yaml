@@ -30,6 +30,12 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
         persist-credentials: false
+        token: ${{ secrets.KUFULI_TOKEN }}
+
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
     - name: Login to Docker Hub
       uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
@@ -63,19 +69,39 @@ jobs:
         working-dir: "."
         signoff: false
 
+    # Check for changes made by digestabot
+    - name: Check for digest changes
+      id: check-changes
+      run: |
+        if git diff --quiet; then
+          echo "No digest updates needed"
+          echo "has-changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "Digest updates found:"
+          git diff --stat
+          echo "has-changes=true" >> $GITHUB_OUTPUT
+        fi
+
     # Clear all git credentials to prevent duplicate Authorization headers
     - name: Clear git credentials before PR creation
-      if: always()
+      if: steps.check-changes.outputs.has-changes == 'true'
       run: |
+        # Unset all extraheader configs at all levels to prevent duplicate Authorization headers
         git config --local --unset-all http.https://github.com/.extraheader || true
         git config --global --unset-all http.https://github.com/.extraheader || true
         git config --system --unset-all http.https://github.com/.extraheader || true
+        
+        # Remove credential files
         rm -f ~/.git-credentials || true
+        
+        # Verify cleanup
+        echo "Git config after cleanup:"
+        git config --list | grep -i "http.https://github.com" || echo "No GitHub HTTP config found (expected)"
 
     # Create PR with clean credentials
     - name: Create Pull Request
       id: create-pr
-      if: success()
+      if: steps.check-changes.outputs.has-changes == 'true'
       uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.6
       with:
         token: ${{ secrets.KUFULI_TOKEN }}
@@ -84,6 +110,8 @@ jobs:
         branch: dhi-digestabot
         delete-branch: true
         labels: 'dependencies,security,dhi-images'
+        committer: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+        author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
         body: |
           🛡️ **DHI Base Image Security Update**
           
@@ -131,3 +159,13 @@ jobs:
         echo "- ✅ Security patches applied by experts" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Reduced attack surface compared to standard images" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Compliance with security best practices" >> $GITHUB_STEP_SUMMARY
+
+    - name: No Updates Summary
+      if: steps.check-changes.outputs.has-changes == 'false'
+      run: |
+        echo "## ✅ DHI Base Images Up to Date" >> $GITHUB_STEP_SUMMARY
+        echo "No digest updates needed - all DHI base images are current." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Images Monitored:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev" >> $GITHUB_STEP_SUMMARY
+        echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21-alpine3.22_whale1" >> $GITHUB_STEP_SUMMARY
