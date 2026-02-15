@@ -88,6 +88,9 @@ jobs:
           - Enterprise security standards
           - Automated security updates
 
+    - name: Clear git credentials
+      run: git config --global --unset-all http.https://github.com/.extraheader || true
+
     - name: Summary
       if: steps.digestabot.outputs.pull_request_number
       run: |
