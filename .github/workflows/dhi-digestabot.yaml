@@ -28,6 +28,8 @@ jobs:
 
     - name: Checkout repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
 
     - name: Login to Docker Hub
       uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
@@ -51,12 +53,6 @@ jobs:
           exit 1
         fi
 
-    # Clear existing git credentials to avoid duplicate Authorization headers
-    - name: Clear git credentials
-      run: |
-        git config --local --unset-all http.https://github.com/.extraheader || true
-        git config --global --unset-all http.https://github.com/.extraheader || true
-
     # Run digestabot specifically for the DHI Dockerfile
     - name: Update DHI base image digests
       uses: chainguard-dev/digestabot@a3b776c1ca57d3127c85578cde8fef6eed3c75d3 # v1.2.3
@@ -65,12 +61,30 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.KUFULI_TOKEN }}
       with:
         working-dir: "."
-        title-for-pr: 'Update DHI base image digests'
-        commit-message: 'Update DHI base image digests'
-        branch-for-pr: dhi-digestabot
-        labels-for-pr: 'dependencies,security,dhi-images'
         signoff: false
-        description-for-pr: |
+
+    # Clear all git credentials to prevent duplicate Authorization headers
+    - name: Clear git credentials before PR creation
+      if: always()
+      run: |
+        git config --local --unset-all http.https://github.com/.extraheader || true
+        git config --global --unset-all http.https://github.com/.extraheader || true
+        git config --system --unset-all http.https://github.com/.extraheader || true
+        rm -f ~/.git-credentials || true
+
+    # Create PR with clean credentials
+    - name: Create Pull Request
+      id: create-pr
+      if: success()
+      uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.6
+      with:
+        token: ${{ secrets.KUFULI_TOKEN }}
+        commit-message: 'Update DHI base image digests'
+        title: 'Update DHI base image digests'
+        branch: dhi-digestabot
+        delete-branch: true
+        labels: 'dependencies,security,dhi-images'
+        body: |
           🛡️ **DHI Base Image Security Update**
           
           This automated PR updates our DHI (Docker Hardened Images) base image digests to the latest secure versions.
@@ -94,15 +108,12 @@ jobs:
           - Enterprise security standards
           - Automated security updates
 
-    - name: Clear git credentials
-      run: git config --global --unset-all http.https://github.com/.extraheader || true
-
     - name: Summary
-      if: steps.digestabot.outputs.pull_request_number
+      if: steps.create-pr.outputs.pull-request-number
       run: |
         echo "## DHI Base Image Update" >> $GITHUB_STEP_SUMMARY
         echo "A pull request has been created to update the DHI base image digests." >> $GITHUB_STEP_SUMMARY
-        echo "**Pull Request Number:** #${{ steps.digestabot.outputs.pull_request_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Pull Request Number:** #${{ steps.create-pr.outputs.pull-request-number }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Images Currently Tracked:" >> $GITHUB_STEP_SUMMARY
         echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a" >> $GITHUB_STEP_SUMMARY
