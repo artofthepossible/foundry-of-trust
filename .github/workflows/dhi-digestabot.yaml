@@ -27,15 +27,14 @@ jobs:
         egress-policy: audit
 
     - name: Checkout repository
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       with:
-        persist-credentials: false
-        token: ${{ secrets.KUFULI_TOKEN }}
+        persist-credentials: false    # Don't store any credentials
 
     - name: Configure Git
       run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
     - name: Login to Docker Hub
       uses: docker/login-action@3d58c274f17dffee475a5520cbe67f0a882c4dbb # v3.3.0
@@ -86,17 +85,32 @@ jobs:
     - name: Clear git credentials before PR creation
       if: steps.check-changes.outputs.has-changes == 'true'
       run: |
-        # Unset all extraheader configs at all levels to prevent duplicate Authorization headers
-        git config --local --unset-all http.https://github.com/.extraheader || true
-        git config --global --unset-all http.https://github.com/.extraheader || true
-        git config --system --unset-all http.https://github.com/.extraheader || true
+        echo "=== Aggressively clearing ALL git credentials ==="
         
-        # Remove credential files
-        rm -f ~/.git-credentials || true
+        # Unset all extraheader configs at all levels
+        git config --local --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+        git config --global --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+        git config --system --unset-all http.https://github.com/.extraheader 2>/dev/null || true
         
-        # Verify cleanup
-        echo "Git config after cleanup:"
-        git config --list | grep -i "http.https://github.com" || echo "No GitHub HTTP config found (expected)"
+        # Also clear any http.extraheader without domain specificity
+        git config --local --unset-all http.extraheader 2>/dev/null || true
+        git config --global --unset-all http.extraheader 2>/dev/null || true
+        git config --system --unset-all http.extraheader 2>/dev/null || true
+        
+        # Remove credential files and helpers
+        rm -f ~/.git-credentials 2>/dev/null || true
+        rm -f ~/.gitconfig 2>/dev/null || true
+        git config --local --unset-all credential.helper 2>/dev/null || true
+        git config --global --unset-all credential.helper 2>/dev/null || true
+        
+        # Clear any environment variables that might contain auth
+        unset GIT_ASKPASS GIT_USERNAME GIT_PASSWORD GITHUB_TOKEN || true
+        
+        # Verify complete cleanup
+        echo "=== Git config after aggressive cleanup ==="
+        git config --list 2>/dev/null | grep -iE "(http|credential|extraheader)" || echo "✅ No HTTP/credential configs found (expected)"
+        
+        echo "=== Credentials cleared successfully ==="
 
     # Create PR with clean credentials (separate from digestabot to avoid gitsign issues)
     - name: Create Pull Request
