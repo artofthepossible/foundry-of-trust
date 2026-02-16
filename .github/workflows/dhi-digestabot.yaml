@@ -64,6 +64,7 @@ jobs:
       id: digestabot
       env:
         GITHUB_TOKEN: ${{ secrets.KUFULI_TOKEN }}
+        CREATE_PR: false  # Disable internal PR creation to avoid gitsign and duplicate auth headers
       with:
         working-dir: "."
         signoff: false
