@@ -28,6 +28,14 @@ jobs:
 
     - name: Checkout repository
       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      with:
+        persist-credentials: false
+        token: ${{ secrets.KUFULI_TOKEN }}
+
+    - name: Configure Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
     - name: Login to Docker Hub
       uses: docker/login-action@3d58c274f17dffee475a5520cbe67f0a882c4dbb # v3.3.0
@@ -38,7 +46,7 @@ jobs:
     - name: Verify DHI image access
       run: |
         echo "Testing access to DHI base images..."
-        if docker manifest inspect docker.io/demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev >/dev/null 2>&1; then
+        if docker manifest inspect docker.io/demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev >/dev/null 2>&1; then
           echo "✅ Build image access verified"
         else
           echo "❌ Cannot access build image - check authentication"
@@ -50,28 +58,70 @@ jobs:
           echo "❌ Cannot access runtime image - check authentication"
           exit 1
         fi
-    # Run digestabot specifically for the DHI Dockerfile
+    # Run digestabot to update digests only (no PR creation - avoids gitsign/auth issues)
     - name: Update DHI base image digests
       uses: chainguard-dev/digestabot@a3b776c1ca57d3127c85578cde8fef6eed3c75d3 # v1.2.3
       id: digestabot
+      env:
+        GITHUB_TOKEN: ${{ secrets.KUFULI_TOKEN }}
       with:
         working-dir: "."
-        token: ${{ secrets.KUFULI_TOKEN }}
-        title-for-pr: 'Update DHI base image digests'
-        commit-message: 'Update DHI base image digests'
-        branch-for-pr: dhi-digestabot
-        labels-for-pr: 'dependencies,security,dhi-images'
         signoff: false
-        description-for-pr: |
+
+    # Check for changes made by digestabot
+    - name: Check for digest changes
+      id: check-changes
+      run: |
+        if git diff --quiet; then
+          echo "No digest updates needed"
+          echo "has-changes=false" >> $GITHUB_OUTPUT
+        else
+          echo "Digest updates found:"
+          git diff --stat
+          echo "has-changes=true" >> $GITHUB_OUTPUT
+        fi
+
+    # Clear all git credentials to prevent duplicate Authorization headers
+    - name: Clear git credentials before PR creation
+      if: steps.check-changes.outputs.has-changes == 'true'
+      run: |
+        # Unset all extraheader configs at all levels to prevent duplicate Authorization headers
+        git config --local --unset-all http.https://github.com/.extraheader || true
+        git config --global --unset-all http.https://github.com/.extraheader || true
+        git config --system --unset-all http.https://github.com/.extraheader || true
+        
+        # Remove credential files
+        rm -f ~/.git-credentials || true
+        
+        # Verify cleanup
+        echo "Git config after cleanup:"
+        git config --list | grep -i "http.https://github.com" || echo "No GitHub HTTP config found (expected)"
+
+    # Create PR with clean credentials (separate from digestabot to avoid gitsign issues)
+    - name: Create Pull Request
+      id: create-pr
+      if: steps.check-changes.outputs.has-changes == 'true'
+      uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.6
+      with:
+        token: ${{ secrets.KUFULI_TOKEN }}
+        commit-message: 'Update DHI base image digests'
+        title: 'Update DHI base image digests'
+        branch: dhi-digestabot
+        delete-branch: true
+        labels: 'dependencies,security,dhi-images'
+        committer: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+        author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+        body: |
           🛡️ **DHI Base Image Security Update**
           
           This automated PR updates our DHI (Docker Hardened Images) base image digests to the latest secure versions.
           
           ## 🔍 Images Updated
           
-          **Build Stage**: demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev  
+          **Build Stage**: demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev  
           **Runtime Stage**: demonstrationorg/dhi-temurin:21-alpine3.22_whale1
           
+
           ## 🛡️ Security Benefits
           - ✅ Latest security patches applied
           - ✅ Vulnerability fixes included
@@ -84,15 +134,16 @@ jobs:
           - Reduced attack surface
           - Enterprise security standards
           - Automated security updates
+
     - name: Summary
-      if: steps.digestabot.outputs.pull_request_number
+      if: steps.create-pr.outputs.pull-request-number
       run: |
         echo "## DHI Base Image Update" >> $GITHUB_STEP_SUMMARY
         echo "A pull request has been created to update the DHI base image digests." >> $GITHUB_STEP_SUMMARY
-        echo "**Pull Request Number:** #${{ steps.digestabot.outputs.pull_request_number }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Pull Request Number:** #${{ steps.create-pr.outputs.pull-request-number }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Images Currently Tracked:" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a" >> $GITHUB_STEP_SUMMARY
         echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:b40246be5f213ba0aa548a8ab1b7536e1c6e8909000acbdab30157b12579249e" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Security Benefits:" >> $GITHUB_STEP_SUMMARY
@@ -107,3 +158,13 @@ jobs:
         echo "- ✅ Security patches applied by experts" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Reduced attack surface compared to standard images" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Compliance with security best practices" >> $GITHUB_STEP_SUMMARY
+
+    - name: No Updates Summary
+      if: steps.check-changes.outputs.has-changes == 'false'
+      run: |
+        echo "## ✅ DHI Base Images Up to Date" >> $GITHUB_STEP_SUMMARY
+        echo "No digest updates needed - all DHI base images are current." >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Images Monitored:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev" >> $GITHUB_STEP_SUMMARY
+        echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21-alpine3.22_whale1" >> $GITHUB_STEP_SUMMARY
