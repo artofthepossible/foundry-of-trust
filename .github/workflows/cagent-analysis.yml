@@ -14,15 +14,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Security Review
-        uses: docker/cagent-action@latest
+        uses: docker/cagent-action@v1.1.7
         with:
           agent: docker/github-action-security-scanner
           prompt: "Analyze for security issues"
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Code Quality Analysis
-        uses: docker/cagent-action@latest
+        uses: docker/cagent-action@v1.1.7
         with:
           agent: docker/code-quality-analyzer
           prompt: "Analyze code quality and best practices"
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
