@@ -5,22 +5,20 @@
 ################################################################################
 
 # Create a stage for resolving and downloading dependencies.
-#FROM eclipse-temurin:21-jdk-jammy AS deps
 
 # Update to DHI golden base images for immediate security improvement:
-FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a AS deps
+#FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a AS deps
+FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev@sha256:70b7fca463e6a1d652ef442a9c0574e2ebf4a9ab209eea6cdb9f62f87d375523
 
 WORKDIR /build
 
 # Copy the mvnw wrapper with executable permissions and maven wrapper config
 COPY --chmod=0755 mvnw mvnw
 COPY .mvn/ .mvn/
-#COPY pom.xml .
 
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.m2 so that subsequent builds don't have to
 # re-download packages.
-#RUN --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline -DskipTests
 RUN --mount=type=bind,source=pom.xml,target=pom.xml \
     --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline -DskipTests
 ################################################################################
@@ -70,11 +68,6 @@ RUN java -Djarmode=layertools -jar target/app.jar extract --destination target/e
 
 # Update to DHI golden base images for immediate security improvement:
 # Note: Replace with actual digest after running: docker inspect demonstrationorg/dhi-temurin:21_whale --format='{{index .RepoDigests 0}}'
-#demonstrationorg/dhi-temurin:21-alpine3.21
-#demonstrationorg/dhi-temurin:21-alpine3.22_whale1
-#FROM demonstrationorg/dhi-temurin:21_whale AS final
-#FROM demonstrationorg/dhi-temurin:21_whale@sha256:aa92ad8c3bc333756a445af424de075dcdcbc81e94e2345e01f5631adba7eec0 AS final
-#FROM demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821 AS final
 FROM demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:b40246be5f213ba0aa548a8ab1b7536e1c6e8909000acbdab30157b12579249e AS final
 
 # Our Runtime Image has a  non-privileged user that the app will run under UID=10001.
