@@ -1,3 +1,23 @@
+Skip to content
+artofthepossible
+foundry-of-trust
+Repository navigation
+Code
+Issues
+Pull requests
+Agents
+Actions
+Projects
+Wiki
+Security
+Insights
+Settings
+DHI Base Image Digestabot
+DHI Base Image Digestabot #28
+All jobs
+Run details
+Workflow file for this run
+.github/workflows/dhi-digestabot.yaml at f6ac710
 name: DHI Base Image Digestabot
 
 on:
@@ -27,14 +47,7 @@ jobs:
         egress-policy: audit
 
     - name: Checkout repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      with:
-        persist-credentials: false    # Don't store any credentials - prevents duplicate Authorization headers
-
-    - name: Configure Git
-      run: |
-        git config --local user.name "github-actions[bot]"
-        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
     - name: Login to Docker Hub
       uses: docker/login-action@3d58c274f17dffee475a5520cbe67f0a882c4dbb # v3.3.0
@@ -45,7 +58,7 @@ jobs:
     - name: Verify DHI image access
       run: |
         echo "Testing access to DHI base images..."
-        if docker manifest inspect docker.io/demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev >/dev/null 2>&1; then
+        if docker manifest inspect docker.io/demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev >/dev/null 2>&1; then
           echo "✅ Build image access verified"
         else
           echo "❌ Cannot access build image - check authentication"
@@ -57,113 +70,28 @@ jobs:
           echo "❌ Cannot access runtime image - check authentication"
           exit 1
         fi
-    # Run digestabot to update digests only (no PR creation - avoids gitsign/auth issues)
+    # Run digestabot specifically for the DHI Dockerfile
     - name: Update DHI base image digests
       uses: chainguard-dev/digestabot@a3b776c1ca57d3127c85578cde8fef6eed3c75d3 # v1.2.3
       id: digestabot
-      # No GITHUB_TOKEN = no PR creation, no gitsign, no git auth issues
       with:
         working-dir: "."
-        signoff: false
-
-    # Check for changes made by digestabot
-    - name: Check for digest changes
-      id: check-changes
-      run: |
-        if git diff --quiet; then
-          echo "No digest updates needed"
-          echo "has-changes=false" >> $GITHUB_OUTPUT
-        else
-          echo "Digest updates found:"
-          git diff --stat
-          echo "has-changes=true" >> $GITHUB_OUTPUT
-        fi
-
-    # Discard workflow file changes - we only want Dockerfile digest updates
-    - name: Discard workflow file changes
-      if: steps.check-changes.outputs.has-changes == 'true'
-      run: |
-        echo "=== Discarding workflow file changes ==="
-        git checkout -- .github/workflows/ 2>/dev/null || true
-        echo "✅ Workflow changes discarded"
-        echo ""
-        echo "Files remaining for PR:"
-        git diff --stat
-
-    # Clear environment variables that could cause duplicate Authorization headers
-    - name: Clear authentication environment variables
-      if: steps.check-changes.outputs.has-changes == 'true'
-      run: |
-        echo "=== Clearing authentication environment variables ==="
-        # Unset variables that might inject Authorization headers
-        unset GIT_ASKPASS 2>/dev/null || true
-        unset GIT_USERNAME 2>/dev/null || true
-        unset GIT_PASSWORD 2>/dev/null || true
-        unset GITHUB_TOKEN 2>/dev/null || true
-        unset HTTP_AUTHORIZATION 2>/dev/null || true
-        unset AUTHORIZATION 2>/dev/null || true
-        
-        # Clear from environment file if they exist
-        sed -i.bak '/GIT_ASKPASS/d; /GIT_USERNAME/d; /GIT_PASSWORD/d; /GITHUB_TOKEN/d; /HTTP_AUTHORIZATION/d; /AUTHORIZATION/d' "$GITHUB_ENV" 2>/dev/null || true
-        
-        echo "✅ Environment variables cleared"
-
-    # Clear all git credentials to prevent duplicate Authorization headers
-    - name: Clear git credentials before PR creation
-      if: steps.check-changes.outputs.has-changes == 'true'
-      run: |
-        echo "=== Aggressively clearing ALL git credentials ==="
-        
-        # Unset all extraheader configs at all levels
-        git config --local --unset-all http.https://github.com/.extraheader 2>/dev/null || true
-        git config --global --unset-all http.https://github.com/.extraheader 2>/dev/null || true
-        git config --system --unset-all http.https://github.com/.extraheader 2>/dev/null || true
-        
-        # Also clear any http.extraheader without domain specificity
-        git config --local --unset-all http.extraheader 2>/dev/null || true
-        git config --global --unset-all http.extraheader 2>/dev/null || true
-        git config --system --unset-all http.extraheader 2>/dev/null || true
-        
-        # Remove credential files and helpers
-        rm -f ~/.git-credentials 2>/dev/null || true
-        rm -f ~/.gitconfig 2>/dev/null || true
-        git config --local --unset-all credential.helper 2>/dev/null || true
-        git config --global --unset-all credential.helper 2>/dev/null || true
-        
-        # Clear any environment variables that might contain auth
-        unset GIT_ASKPASS GIT_USERNAME GIT_PASSWORD GITHUB_TOKEN || true
-        
-        # Verify complete cleanup
-        echo "=== Git config after aggressive cleanup ==="
-        git config --list 2>/dev/null | grep -iE "(http|credential|extraheader)" || echo "✅ No HTTP/credential configs found (expected)"
-        
-        echo "=== Credentials cleared successfully ==="
-
-    # Create PR with clean credentials (separate from digestabot to avoid gitsign issues)
-    - name: Create Pull Request
-      id: create-pr
-      if: steps.check-changes.outputs.has-changes == 'true'
-      uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.6
-      with:
         token: ${{ secrets.KUFULI_TOKEN }}
+        title-for-pr: 'Update DHI base image digests'
         commit-message: 'Update DHI base image digests'
-        title: 'Update DHI base image digests'
-        branch: dhi-digestabot
-        delete-branch: true
-        labels: 'dependencies,security,dhi-images'
-        committer: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
-        author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
-        body: |
+        branch-for-pr: dhi-digestabot
+        labels-for-pr: 'dependencies,security,dhi-images'
+        signoff: false
+        description-for-pr: |
           🛡️ **DHI Base Image Security Update**
           
           This automated PR updates our DHI (Docker Hardened Images) base image digests to the latest secure versions.
           
           ## 🔍 Images Updated
           
-          **Build Stage**: demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev  
+          **Build Stage**: demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev  
           **Runtime Stage**: demonstrationorg/dhi-temurin:21-alpine3.22_whale1
           
-
           ## 🛡️ Security Benefits
           - ✅ Latest security patches applied
           - ✅ Vulnerability fixes included
@@ -176,16 +104,15 @@ jobs:
           - Reduced attack surface
           - Enterprise security standards
           - Automated security updates
-
     - name: Summary
-      if: steps.create-pr.outputs.pull-request-number
+      if: steps.digestabot.outputs.pull_request_number
       run: |
         echo "## DHI Base Image Update" >> $GITHUB_STEP_SUMMARY
         echo "A pull request has been created to update the DHI base image digests." >> $GITHUB_STEP_SUMMARY
-        echo "**Pull Request Number:** #${{ steps.create-pr.outputs.pull-request-number }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Pull Request Number:** #${{ steps.digestabot.outputs.pull_request_number }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Images Currently Tracked:" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a" >> $GITHUB_STEP_SUMMARY
         echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:b40246be5f213ba0aa548a8ab1b7536e1c6e8909000acbdab30157b12579249e" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Security Benefits:" >> $GITHUB_STEP_SUMMARY
@@ -200,13 +127,3 @@ jobs:
         echo "- ✅ Security patches applied by experts" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Reduced attack surface compared to standard images" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Compliance with security best practices" >> $GITHUB_STEP_SUMMARY
-
-    - name: No Updates Summary
-      if: steps.check-changes.outputs.has-changes == 'false'
-      run: |
-        echo "## ✅ DHI Base Images Up to Date" >> $GITHUB_STEP_SUMMARY
-        echo "No digest updates needed - all DHI base images are current." >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Images Monitored:" >> $GITHUB_STEP_SUMMARY
-        echo "- **Build Stage:** demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev" >> $GITHUB_STEP_SUMMARY
-        echo "- **Runtime Stage:** demonstrationorg/dhi-temurin:21-alpine3.22_whale1" >> $GITHUB_STEP_SUMMARY
