@@ -85,7 +85,10 @@ jobs:
       run: |
         echo "=== Discarding workflow file changes ==="
         git checkout -- .github/workflows/ 2>/dev/null || true
-        echo "✅ Workflow changes discarded, only Dockerfile changes will be committed"
+        echo "✅ Workflow changes discarded"
+        echo ""
+        echo "Files remaining for PR:"
+        git diff --stat
 
     # Clear environment variables that could cause duplicate Authorization headers
     - name: Clear authentication environment variables
