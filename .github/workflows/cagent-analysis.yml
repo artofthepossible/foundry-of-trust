@@ -1,7 +1,7 @@
 name: AI Code Review
 
 env:
-  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
 on:
   pull_request:
