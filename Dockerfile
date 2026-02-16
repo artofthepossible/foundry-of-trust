@@ -7,7 +7,7 @@
 # Create a stage for resolving and downloading dependencies.
 
 # Update to DHI golden base images for immediate security improvement:
-FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a AS deps
+FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a AS deps
 
 WORKDIR /build
 
@@ -66,7 +66,7 @@ RUN java -Djarmode=layertools -jar target/app.jar extract --destination target/e
 #FROM eclipse-temurin:21-jre-jammy AS final
 
 # Update to DHI golden base images for immediate security improvement:
-# Note: Replace with actual digest after running: docker inspect demonstrationorg/dhi-temurin:21_whale --format='{{index .RepoDigests 0}}'
+# Note: Replace with actual digest after running: docker inspect demonstrationorg/dhi-temurin:21-alpine3.22_whale1 --format='{{index .RepoDigests 0}}'
 FROM demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:b40246be5f213ba0aa548a8ab1b7536e1c6e8909000acbdab30157b12579249e AS final
 
 # Our Runtime Image has a  non-privileged user that the app will run under UID=10001.
