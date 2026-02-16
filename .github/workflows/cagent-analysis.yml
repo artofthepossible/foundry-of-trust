@@ -1,26 +1,28 @@
-name: CAgent Code Analysis
-
+name: AI Code Review
 on:
-  issue_comment: # Enables /review command in PR comments
-    types: [created]
-  pull_request_review_comment: # Captures feedback on review comments for learning
-    types: [created]
-  pull_request_target: # Triggers auto-review on PR open; uses base branch context so secrets work with forks
-    types: [ready_for_review, opened]
-
-permissions:
-  contents: read
+  pull_request:
+    types: [opened]
 
 jobs:
-  analyze:
-    uses: docker/cagent-action/.github/workflows/review-pr.yml@v1.1.8
-    # Scoped to the job so other jobs in this workflow aren't over-permissioned
+  review:
+    runs-on: ubuntu-latest
     permissions:
-      contents: read       # Read repository files and PR diffs
-      pull-requests: write # Post review comments and approve/request changes
-      issues: write        # Create security incident issues if secrets are detected in output
-    secrets:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      #CAGENT_ORG_MEMBERSHIP_TOKEN: ${{ secrets.CAGENT_ORG_MEMBERSHIP_TOKEN }} # PAT with read:org scope; gates auto-reviews to org members only
-      #CAGENT_REVIEWER_APP_ID: ${{ secrets.CAGENT_REVIEWER_APP_ID }} # GitHub App ID; reviews appear as your app instead of github-actions[bot]
-      #CAGENT_REVIEWER_APP_PRIVATE_KEY: ${{ secrets.CAGENT_REVIEWER_APP_PRIVATE_KEY }} # GitHub App private key; paired with App ID above
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Security Review
+        uses: docker/cagent-action@latest
+        with:
+          agent: docker/github-action-security-scanner
+          prompt: "Analyze for security issues"
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+
+      - name: Code Quality Analysis
+        uses: docker/cagent-action@latest
+        with:
+          agent: docker/code-quality-analyzer
+          prompt: "Analyze code quality and best practices"
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
