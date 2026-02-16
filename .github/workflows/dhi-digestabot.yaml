@@ -44,7 +44,7 @@ jobs:
     - name: Login to Docker Hub
       uses: docker/login-action@3d58c274f17dffee475a5520cbe67f0a882c4dbb # v3.3.0
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
     - name: Verify DHI image access
@@ -85,6 +85,24 @@ jobs:
           git diff --stat
           echo "has-changes=true" >> $GITHUB_OUTPUT
         fi
+
+    # Clear environment variables that could cause duplicate Authorization headers
+    - name: Clear authentication environment variables
+      if: steps.check-changes.outputs.has-changes == 'true'
+      run: |
+        echo "=== Clearing authentication environment variables ==="
+        # Unset variables that might inject Authorization headers
+        unset GIT_ASKPASS 2>/dev/null || true
+        unset GIT_USERNAME 2>/dev/null || true
+        unset GIT_PASSWORD 2>/dev/null || true
+        unset GITHUB_TOKEN 2>/dev/null || true
+        unset HTTP_AUTHORIZATION 2>/dev/null || true
+        unset AUTHORIZATION 2>/dev/null || true
+        
+        # Clear from environment file if they exist
+        sed -i.bak '/GIT_ASKPASS/d; /GIT_USERNAME/d; /GIT_PASSWORD/d; /GITHUB_TOKEN/d; /HTTP_AUTHORIZATION/d; /AUTHORIZATION/d' "$GITHUB_ENV" 2>/dev/null || true
+        
+        echo "✅ Environment variables cleared"
 
     # Clear all git credentials to prevent duplicate Authorization headers
     - name: Clear git credentials before PR creation
