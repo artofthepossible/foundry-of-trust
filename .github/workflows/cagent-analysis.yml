@@ -15,16 +15,23 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
 
       - name: Security Review
         uses: docker/cagent-action@v1.1.7
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           agent: docker/github-action-security-scanner
           prompt: "Analyze for security issues"
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Code Quality Analysis
         uses: docker/cagent-action@v1.1.7
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           agent: docker/code-quality-analyzer
           prompt: "Analyze code quality and best practices"
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
