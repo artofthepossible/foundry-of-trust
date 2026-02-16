@@ -79,6 +79,14 @@ jobs:
           echo "has-changes=true" >> $GITHUB_OUTPUT
         fi
 
+    # Discard workflow file changes - we only want Dockerfile digest updates
+    - name: Discard workflow file changes
+      if: steps.check-changes.outputs.has-changes == 'true'
+      run: |
+        echo "=== Discarding workflow file changes ==="
+        git checkout -- .github/workflows/ 2>/dev/null || true
+        echo "✅ Workflow changes discarded, only Dockerfile changes will be committed"
+
     # Clear environment variables that could cause duplicate Authorization headers
     - name: Clear authentication environment variables
       if: steps.check-changes.outputs.has-changes == 'true'
