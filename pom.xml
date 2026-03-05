@@ -25,6 +25,7 @@
 		<logback.version>1.5.25</logback.version>
 		<spring-framework.version>6.2.11</spring-framework.version>
 		<testcontainers.version>1.20.4</testcontainers.version>
+		<jackson.version>2.18.6</jackson.version>
 		
 		<!-- Optimization: Reduce logging overhead -->
 		<slf4j.version>2.0.17</slf4j.version>
@@ -127,6 +128,23 @@
 				<version>${spring-framework.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			
+			<!-- Security overrides: Jackson (CVE fixes) -->
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-annotations</artifactId>
+				<version>${jackson.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
