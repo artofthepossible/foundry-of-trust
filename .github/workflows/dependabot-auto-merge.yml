@@ -1,0 +1,204 @@
+name: Dependabot Auto-Merge
+
+# Trigger when Dependabot opens or updates a PR
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    # Only run on Dependabot PRs
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      
+      - name: Determine merge strategy
+        id: strategy
+        run: |
+          # Extract metadata
+          UPDATE_TYPE="${{ steps.metadata.outputs.update-type }}"
+          DEPENDENCY_NAMES="${{ steps.metadata.outputs.dependency-names }}"
+          DEPENDENCY_TYPE="${{ steps.metadata.outputs.dependency-type }}"
+          
+          echo "Update Type: $UPDATE_TYPE"
+          echo "Dependencies: $DEPENDENCY_NAMES"
+          echo "Dependency Type: $DEPENDENCY_TYPE"
+          
+          # Determine if this is a security update
+          IS_SECURITY="false"
+          if echo "${{ steps.metadata.outputs.cvss }}" | grep -q '[0-9]'; then
+            IS_SECURITY="true"
+          fi
+          
+          # Check PR labels for security indicators
+          if echo "${{ steps.metadata.outputs.labels }}" | grep -qi "security"; then
+            IS_SECURITY="true"
+          fi
+          
+          echo "is_security=$IS_SECURITY" >> $GITHUB_OUTPUT
+          
+          # Determine auto-merge eligibility based on update type and security status
+          AUTO_APPROVE="false"
+          AUTO_MERGE="false"
+          COMMENT=""
+          
+          case "$UPDATE_TYPE" in
+            "version-update:semver-patch")
+              if [ "$IS_SECURITY" = "true" ]; then
+                AUTO_APPROVE="true"
+                AUTO_MERGE="true"
+                COMMENT="✅ **Auto-merging** security patch update. Security fixes are automatically approved."
+              else
+                AUTO_APPROVE="true"
+                AUTO_MERGE="true"
+                COMMENT="✅ **Auto-merging** patch version update. Patches are low-risk changes."
+              fi
+              ;;
+            
+            "version-update:semver-minor")
+              if [ "$IS_SECURITY" = "true" ]; then
+                AUTO_APPROVE="true"
+                AUTO_MERGE="true"
+                COMMENT="✅ **Auto-merging** security-related minor update. Security updates are prioritized."
+              else
+                AUTO_APPROVE="true"
+                AUTO_MERGE="false"
+                COMMENT="⚠️ **Approved** but requires manual merge. Minor version updates may include new features - please review the changelog before merging."
+              fi
+              ;;
+            
+            "version-update:semver-major")
+              AUTO_APPROVE="false"
+              AUTO_MERGE="false"
+              COMMENT="🛑 **Manual review required** for major version update. This may include breaking changes. Please review carefully:\n\n"
+              COMMENT="$COMMENT- Check migration guides and breaking change documentation\n"
+              COMMENT="$COMMENT- Run full test suite locally\n"
+              COMMENT="$COMMENT- Verify all dependent code still works\n"
+              COMMENT="$COMMENT\nDo not merge until thoroughly tested."
+              ;;
+            
+            *)
+              AUTO_APPROVE="false"
+              AUTO_MERGE="false"
+              COMMENT="ℹ️ Unknown update type. Manual review required."
+              ;;
+          esac
+          
+          echo "auto_approve=$AUTO_APPROVE" >> $GITHUB_OUTPUT
+          echo "auto_merge=$AUTO_MERGE" >> $GITHUB_OUTPUT
+          echo "comment<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Create a detailed summary
+          {
+            echo "### 📊 Dependabot Auto-Merge Analysis"
+            echo ""
+            echo "| Property | Value |"
+            echo "|----------|-------|"
+            echo "| Dependencies | $DEPENDENCY_NAMES |"
+            echo "| Update Type | \`$UPDATE_TYPE\` |"
+            echo "| Dependency Type | $DEPENDENCY_TYPE |"
+            echo "| Security Update | $IS_SECURITY |"
+            echo "| Auto-Approve | $AUTO_APPROVE |"
+            echo "| Auto-Merge | $AUTO_MERGE |"
+            echo ""
+            echo "---"
+            echo ""
+            echo "$COMMENT"
+          } > pr-comment.md
+      
+      - name: Comment on PR with decision
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const comment = fs.readFileSync('pr-comment.md', 'utf8');
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+      
+      - name: Auto-approve PR
+        if: steps.strategy.outputs.auto_approve == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr review ${{ github.event.pull_request.number }} --approve \
+            --body "✅ Automatically approved by Dependabot Auto-Merge workflow based on update type and security status."
+      
+      - name: Enable auto-merge
+        if: steps.strategy.outputs.auto_merge == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Enable auto-merge with squash strategy
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --auto \
+            --squash \
+            --delete-branch
+          
+          echo "✅ Auto-merge enabled. PR will merge automatically when all checks pass."
+      
+      - name: Add labels based on decision
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const labels = ['dependabot'];
+            
+            if ('${{ steps.strategy.outputs.is_security }}' === 'true') {
+              labels.push('security');
+            }
+            
+            if ('${{ steps.strategy.outputs.auto_merge }}' === 'true') {
+              labels.push('auto-merge-enabled');
+            } else if ('${{ steps.strategy.outputs.auto_approve }}' === 'true') {
+              labels.push('auto-approved');
+            } else {
+              labels.push('requires-manual-review');
+            }
+            
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: labels
+            });
+      
+      - name: Close CVE issue if security update
+        if: steps.strategy.outputs.is_security == 'true' && steps.strategy.outputs.auto_merge == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Find open CVE issues
+          CVE_ISSUE=$(gh issue list \
+            --label "security,cve-scan" \
+            --state open \
+            --json number,title \
+            --jq '.[0].number' || echo "")
+          
+          if [ -n "$CVE_ISSUE" ]; then
+            # Add a comment referencing this PR
+            gh issue comment "$CVE_ISSUE" \
+              --body "🔄 Security update in progress: This CVE may be addressed by #${{ github.event.pull_request.number }}. The issue will be verified and closed after the PR merges."
+            
+            echo "✅ Commented on CVE issue #$CVE_ISSUE"
+          fi

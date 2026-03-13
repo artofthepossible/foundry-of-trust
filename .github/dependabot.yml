@@ -1,0 +1,123 @@
+# Dependabot configuration for Maven, Docker, and GitHub Actions
+# This file configures automated dependency updates with smart grouping
+# to reduce PR noise while maintaining security.
+
+version: 2
+updates:
+  # Maven (pom.xml) dependency updates
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 10
+    
+    # Group related dependencies to reduce PR count
+    groups:
+      # Group all Spring Boot related dependencies
+      spring-boot:
+        patterns:
+          - "org.springframework.boot*"
+          - "org.springframework*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      # Group Tomcat embed dependencies (common CVE source)
+      tomcat-embed:
+        patterns:
+          - "org.apache.tomcat.embed*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      # Group Jackson dependencies
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      # Group Testcontainers dependencies
+      testcontainers:
+        patterns:
+          - "org.testcontainers*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      # Group logging dependencies
+      logging:
+        patterns:
+          - "ch.qos.logback*"
+          - "org.slf4j*"
+        update-types:
+          - "minor"
+          - "patch"
+    
+    # Automatically ignore major version updates (requires manual review)
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    
+    labels:
+      - "dependencies"
+      - "maven"
+      - "automerge-candidate"
+    
+    # Allow Dependabot to create security-only updates
+    # even when open-pull-requests-limit is reached
+    security-updates:
+      enabled: true
+
+  # Docker base image updates
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "04:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    
+    labels:
+      - "dependencies"
+      - "docker"
+      - "security"
+    
+    # Ignore dev/test images to focus on production base images
+    ignore:
+      - dependency-name: "*dev*"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 5
+    
+    groups:
+      docker-actions:
+        patterns:
+          - "docker/*"
+        update-types:
+          - "minor"
+          - "patch"
+      
+      checkout-actions:
+        patterns:
+          - "actions/checkout*"
+          - "actions/setup-*"
+        update-types:
+          - "minor"
+          - "patch"
+    
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automerge-candidate"
