@@ -8,3 +8,4 @@ scripts/assets/foundry-trust-vex-20251008180455.json
 scripts/assets/foundry-trust-vex-20251008180746.json
 scripts/assets/targeted-vex-20251008181815.json
 scripts/assets/VEX-ATTACHMENT-GUIDE.md
+target/test-classes/com/example/whale_of_a_time/WhaleOfATimeApplicationTests.class
