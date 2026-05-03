@@ -7,7 +7,7 @@
 # Create a stage for resolving and downloading dependencies.
 
 # Update to DHI golden base images for immediate security improvement:
-FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev@sha256:af9dea0f4c105b9a08d63a8e7f8a70b692c8141e1e309e7e1dee5f5b4a941711 AS deps
+FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a AS deps
 
 WORKDIR /build
 
