@@ -89,7 +89,7 @@ jobs:
         with:
           version: "lab:latest"
           driver: cloud
-          endpoint: "artofthepossible/default"
+          endpoint: "artofthepossible/defaultdbc"
       - run: echo "✅ Set Up Docker Build Cloud cloud-artofthepossible-defaultdbc Buildx status is ${{ job.status }}."
     
       - name: Build and push Docker image with SBOM and Provenance
