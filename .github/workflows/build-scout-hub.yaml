@@ -84,14 +84,10 @@ jobs:
       - run: echo "✅ Extract Docker metadata status is ${{ job.status }}."
 
       # Configure Docker BuildX with cloud builder for enhanced performance and security attestations
-      - name: Set up Docker Build Cloud se-cloud-builder Buildx
-        uses: docker/setup-buildx-action@v4.2.0
-        with:
-          version: "lab:latest"
-          driver: cloud
-          endpoint: "artofthepossible/defaultdbc"
-      - run: echo "✅ Set Up Docker Build Cloud cloud-artofthepossible-defaultdbc Buildx status is ${{ job.status }}."
-    
+           - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.11.1
+      - run: echo "✅ Set Up Docker Build Cloud cloud-default Buildx status is ${{ job.status }}."
+        
       - name: Build and push Docker image with SBOM and Provenance
         id: build-and-push
         uses: docker/build-push-action@v7.3.0
