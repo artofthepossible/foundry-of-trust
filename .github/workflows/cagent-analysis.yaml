@@ -19,7 +19,7 @@ jobs:
 
 
       - name: Security Review
-        uses: docker/cagent-action@v1.1.7
+        uses: docker/cagent-action@v1.5.0
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
@@ -28,7 +28,7 @@ jobs:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 
       - name: Code Quality Analysis
-        uses: docker/cagent-action@v1.1.7
+        uses: docker/cagent-action@v1.5.0
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
