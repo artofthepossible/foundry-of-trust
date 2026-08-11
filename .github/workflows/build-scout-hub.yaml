@@ -135,30 +135,25 @@ jobs:
       - run: echo "✅ Verify SBOM and Provenance attestations status is ${{ job.status }}."
 
        
-    # Basic vulnerability scanning
-      # Docker Scout display a quickview, cves, recommendations output
       - name: Analyze for critical and high CVEs
-        id: docker-scout-cves
         if: ${{ github.event_name != 'pull_request_target' }}
-        uses: docker/scout-action@v1.24.0
+        uses: docker/scout-action@v1.18.2
         with:
           command: cves
           image: ${{ steps.meta.outputs.tags }}
-          #sarif-file: sarif.output.json
           sarif-file: docker-scout.sarif
-          #platform: "linux/arm64"
           summary: true
       - run: echo "✅ DOCKER SCOUT Analysis - QuickView and CVEs  status is ${{ job.status }}."
-
+      
       # Upload security results
-      - name: Upload SARIF report
-        if: ${{ github.event_name != 'pull_request' }}
-        id: docker-scout-sarif
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: docker-scout.sarif
-          category: Docker-Scout
-      - run: echo "✅ Upload SARIF report status is ${{ job.status }}."
+      #- name: Upload SARIF report
+      #  if: ${{ github.event_name != 'pull_request' }}
+      #  id: docker-scout-sarif
+      #  uses: github/codeql-action/upload-sarif@v4
+      #  with:
+      #    sarif_file: docker-scout.sarif
+      #    category: Docker-Scout
+      #- run: echo "✅ Upload SARIF report status is ${{ job.status }}."
 
 
 
