@@ -10,7 +10,6 @@
 #FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev@sha256:af9dea0f4c105b9a08d63a8e7f8a70b692c8141e1e309e7e1dee5f5b4a941711 AS deps
 #FROM dhi.io/eclipse-temurin:21-jdk-alpine3.23-dev AS deps
 #FROM eclipse-temurin:21-jdk-alpine3.23-dev AS deps
-#FROM dhi.io/eclipse-temurin:21-jdk-alpine3.23-dev AS deps
 FROM eclipse-temurin:21-jdk-jammy AS deps
 
 WORKDIR /build
@@ -73,6 +72,7 @@ RUN java -Djarmode=layertools -jar target/app.jar extract --destination target/e
 # Note: Replace with actual digest after running: docker inspect demonstrationorg/dhi-temurin:21-alpine3.22_whale1 --format='{{index .RepoDigests 0}}'
 #FROM demonstrationorg/dhi-temurin:21-alpine3.22_whale1@sha256:b71e22a17c3351347d420dc531b183b70568dfd7d7aedfdc78455d923b41afc2 AS final
 FROM eclipse-temurin:21-jre-jammy AS final
+
 # Our Runtime Image has a  non-privileged user that the app will run under UID=10001.
 
 

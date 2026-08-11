@@ -93,16 +93,11 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: docker/build-push-action@v7.3.0
         with:
-          context: .
-          push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          sbom: true
-          provenance: true
-          file: ./Dockerfile
-
+          version: "lab:latest"
+          driver: cloud
+          endpoint: "demonstrationorg/default"
+      - run: echo "✅ Set Up Docker Build Cloud cloud-demonstrationorg-default Buildx status is ${{ job.status }}."
+    
       - name: Build and push Docker image with SBOM and Provenance
         if: ${{ github.event_name != 'pull_request' }}
         id: build-and-push
