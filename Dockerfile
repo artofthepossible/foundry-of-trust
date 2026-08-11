@@ -8,7 +8,9 @@
 
 # Update to DHI golden base images for immediate security improvement:
 #FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.22-dev@sha256:af9dea0f4c105b9a08d63a8e7f8a70b692c8141e1e309e7e1dee5f5b4a941711 AS deps
-FROM dhi.io/eclipse-temurin:21-jdk-alpine3.23-dev AS deps
+#FROM dhi.io/eclipse-temurin:21-jdk-alpine3.23-dev AS deps
+FROM eclipse-temurin:21-jdk-alpine3.23-dev AS deps
+
 WORKDIR /build
 
 # Copy the mvnw wrapper with executable permissions and maven wrapper config
