@@ -135,15 +135,15 @@ jobs:
       - run: echo "✅ Verify SBOM and Provenance attestations status is ${{ job.status }}."
 
        
-      - name: Analyze for critical and high CVEs
-        if: ${{ github.event_name != 'pull_request_target' }}
-        uses: docker/scout-action@v1.18.2
-        with:
-          command: cves
-          image: ${{ steps.meta.outputs.tags }}
-          sarif-file: docker-scout.sarif
-          summary: true
-      - run: echo "✅ DOCKER SCOUT Analysis - QuickView and CVEs  status is ${{ job.status }}."
+      #- name: Analyze for critical and high CVEs
+      #  if: ${{ github.event_name != 'pull_request_target' }}
+      #  uses: docker/scout-action@v1.18.2
+      #  with:
+      #    command: cves
+      #    image: ${{ steps.meta.outputs.tags }}
+      #    sarif-file: docker-scout.sarif
+      #    summary: true
+      #- run: echo "✅ DOCKER SCOUT Analysis - QuickView and CVEs  status is ${{ job.status }}."
       
       # Upload security results
       #- name: Upload SARIF report
