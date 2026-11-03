@@ -26,7 +26,7 @@ Our workflow monitors these specific DHI golden base images:
 
 ### Build Stage Image
 ```dockerfile
-demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a
+artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a
 ```
 - **Purpose**: Development and build environment with JDK 21
 - **Base**: Pre-hardened Alpine Linux 3.21 with security patches
@@ -35,7 +35,7 @@ demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev@sha256:d32f08b3aa18668323a82e
 
 ### Runtime Stage Image
 ```dockerfile
-demonstrationorg/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821
+artofthepossible/dhi-temurin:21_whale1@sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821
 ```
 - **Purpose**: Minimal runtime environment for production deployment
 - **Base**: Hardened JRE 21 with custom whale theme
@@ -117,11 +117,11 @@ gh pr list --label=dhi-images --state=open
 ### Image Digest Verification
 ```bash
 # Check current build image digest
-docker inspect docker.io/demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev \
+docker inspect docker.io/artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev \
   --format='{{index .RepoDigests 0}}'
 
 # Check current runtime image digest
-docker inspect docker.io/demonstrationorg/dhi-temurin:21-alpine3.22_whale1 \
+docker inspect docker.io/artofthepossible/dhi-temurin:21-alpine3.22_whale1 \
   --format='{{index .RepoDigests 0}}'
 ```
 
@@ -199,7 +199,7 @@ The workflow will:
 #### Digest Verification Failures
 **Symptoms**: Cannot verify current image digests
 **Solutions**:
-- Pull latest images: `docker pull demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev`
+- Pull latest images: `docker pull artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev`
 - Check registry availability
 - Verify image names and tags are correct
 

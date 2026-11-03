@@ -30,10 +30,10 @@ Build with standard images to see vulnerabilities:
 ```bash
 # Build with standard base images
 docker buildx build \
-  --builder cloud-demonstrationorg-default \
+  --builder cloud-artofthepossible-default \
   --sbom=true \
   --provenance=true \
-  -t demonstrationorg/foundry-of-trust:v1.0-NoDHI \
+  -t artofthepossible/foundry-of-trust:v1.0-NoDHI \
   .
 ```
 
@@ -43,7 +43,7 @@ docker buildx build \
 
 ```bash
 # Scan for vulnerabilities immediately after build
-docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
+docker scout cves artofthepossible/foundry-of-trust:v1.0-NoDHI
 ```
 
 **What developers see:**
@@ -57,10 +57,10 @@ Update to DHI golden base images for immediate security improvement:
 
 ```dockerfile
 # Build Stage - Development tooling included
-FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev AS deps
+FROM artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev AS deps
 
 # Runtime Stage - Minimal, production-ready
-FROM demonstrationorg/dhi-temurin:21_whale AS final
+FROM artofthepossible/dhi-temurin:21_whale AS final
 ```
 
 #### Step 4: Secure Build and Push
@@ -70,10 +70,10 @@ Build with golden base images and push to registry:
 ```bash
 # Build with golden base images - instant security improvement
 docker buildx build \
-  --builder cloud-demonstrationorg-default \
+  --builder cloud-artofthepossible-default \
   --sbom=true \
   --provenance=true \
-  -t demonstrationorg/foundry-of-trust:v1.0-DHI \
+  -t artofthepossible/foundry-of-trust:v1.0-DHI \
   --push \
   .
 ```
@@ -86,14 +86,14 @@ docker buildx build \
 
 ### 2. Golden Base Image Strategy
 
-Our application uses curated, hardened base images from the `demonstrationorg` registry:
+Our application uses curated, hardened base images from the `artofthepossible` registry:
 
 ```dockerfile
 # Build Stage - Development tooling included
-FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev AS deps
+FROM artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev AS deps
 
 # Runtime Stage - Minimal, production-ready
-FROM demonstrationorg/dhi-temurin:21_whale AS final
+FROM artofthepossible/dhi-temurin:21_whale AS final
 ```
 
 **Benefits:**
@@ -109,10 +109,10 @@ Build with Docker Build Cloud for enhanced performance and built-in security fea
 ```bash
 # Single command - instant success, no missing dependencies
 docker buildx build \
-  --builder cloud-demonstrationorg-default \
+  --builder cloud-artofthepossible-default \
   --sbom=true \
   --provenance=true \
-  -t demonstrationorg/foundry-of-trust:v1.0-DHI \
+  -t artofthepossible/foundry-of-trust:v1.0-DHI \
   --push \
   .
 ```
@@ -208,14 +208,14 @@ After applying fixes, verify the improvements:
 mvn clean package
 
 # Rebuild Docker image with security fixes
-docker buildx build -t demonstrationorg/foundry-of-trust:v1.1-NoDHI-fixed .
+docker buildx build -t artofthepossible/foundry-of-trust:v1.1-NoDHI-fixed .
 
 # Scan for remaining vulnerabilities
-docker scout cves demonstrationorg/foundry-of-trust:v1.1-NoDHI-fixed
+docker scout cves artofthepossible/foundry-of-trust:v1.1-NoDHI-fixed
 
 # Compare improvements: Before vs After security fixes
-docker scout compare demonstrationorg/foundry-of-trust:v1.0-NoDHI-fixed \
-  --to demonstrationorg/foundry-of-trust:v1.1-NoDHI-fixed
+docker scout compare artofthepossible/foundry-of-trust:v1.0-NoDHI-fixed \
+  --to artofthepossible/foundry-of-trust:v1.1-NoDHI-fixed
 ```
 
 #### **🎯 Results Summary**
@@ -235,15 +235,15 @@ Validate your image security posture:
 
 ```bash
 # Compare: Standard vs Golden Base Images
-docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
-docker scout cves demonstrationorg/foundry-of-trust:v1.0-DHI
+docker scout cves artofthepossible/foundry-of-trust:v1.0-NoDHI
+docker scout cves artofthepossible/foundry-of-trust:v1.0-DHI
 
 # Policy evaluation
-docker scout policy demonstrationorg/foundry-of-trust:v1.0-DHI
+docker scout policy artofthepossible/foundry-of-trust:v1.0-DHI
 
 # Compare against base image
-docker scout compare --to demonstrationorg/dhi-temurin:21_whale \
-  demonstrationorg/foundry-of-trust:v1.0-DHI
+docker scout compare --to artofthepossible/dhi-temurin:21_whale \
+  artofthepossible/foundry-of-trust:v1.0-DHI
 ```
 
 **Expected Results:**
@@ -259,10 +259,10 @@ Track all microservices built from the same golden base:
 
 ```bash
 # Discover all images using our golden base
-docker scout repo demonstrationorg --filter "base-image:demonstrationorg/dhi-temurin:21_whale"
+docker scout repo artofthepossible --filter "base-image:artofthepossible/dhi-temurin:21_whale"
 
 # Generate lineage report
-docker scout lineage demonstrationorg/dhi-temurin:21_whale
+docker scout lineage artofthepossible/dhi-temurin:21_whale
 ```
 
 ## 🏃‍♂️ Quick Start
@@ -275,7 +275,7 @@ docker --version
 docker buildx version
 
 # Login to demonstration registry
-docker login demonstrationorg
+docker login artofthepossible
 
 
 ### Build and Scan
@@ -287,31 +287,31 @@ docker login demonstrationorg
    
    # Build with standard base images (shows vulnerabilities)
    docker buildx build \
-     --builder cloud-demonstrationorg-default \
+     --builder cloud-artofthepossible-default \
      --sbom=true \
      --provenance=true \
-     -t demonstrationorg/foundry-of-trust:v1.0-NoDHI \
+     -t artofthepossible/foundry-of-trust:v1.0-NoDHI \
      .
    ```
 
 2. **Scan for vulnerabilities locally:**
    ```bash
    # See vulnerabilities in standard images
-   docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
+   docker scout cves artofthepossible/foundry-of-trust:v1.0-NoDHI
    ```
 
 3. **Switch to golden base images:**
    ```bash
    # Update Dockerfile to use DHI golden base images
-   # FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev AS deps
-   # FROM demonstrationorg/dhi-temurin:21_whale AS final
+   # FROM artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev AS deps
+   # FROM artofthepossible/dhi-temurin:21_whale AS final
    
    # Build with golden base images - instant security fix
    docker buildx build \
-     --builder cloud-demonstrationorg-default \
+     --builder cloud-artofthepossible-default \
      --sbom=true \
      --provenance=true \
-     -t demonstrationorg/foundry-of-trust:v1.0-DHI \
+     -t artofthepossible/foundry-of-trust:v1.0-DHI \
      --push \
      .
    ```
@@ -319,17 +319,17 @@ docker login demonstrationorg
 4. **Verify security improvement:**
    ```bash
    # Compare vulnerability scans
-   docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
-   docker scout cves demonstrationorg/foundry-of-trust:v1.0-DHI
+   docker scout cves artofthepossible/foundry-of-trust:v1.0-NoDHI
+   docker scout cves artofthepossible/foundry-of-trust:v1.0-DHI
    
    # Detailed analysis of golden image
-   docker scout policy demonstrationorg/foundry-of-trust:v1.0-DHI
+   docker scout policy artofthepossible/foundry-of-trust:v1.0-DHI
    ```
 
 5. **Check lineage:**
    ```bash
    # View all services using this base
-   docker scout lineage demonstrationorg/dhi-temurin:21_whale
+   docker scout lineage artofthepossible/dhi-temurin:21_whale
    ```
 
 ## 🔄 CI/CD Integration
@@ -348,7 +348,7 @@ on:
     branches: [ main ]
 
 env:
-  REGISTRY: demonstrationorg
+  REGISTRY: artofthepossible
   IMAGE_NAME: foundry-of-trust
 
 jobs:
@@ -367,7 +367,7 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       with:
-        builder: cloud-demonstrationorg-default
+        builder: cloud-artofthepossible-default
 
     - name: Log into registry
       uses: docker/login-action@v3
@@ -397,7 +397,7 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         sbom: true
         provenance: true
-        builder: cloud-demonstrationorg-default
+        builder: cloud-artofthepossible-default
 
     - name: Generate SBOM attestation
       uses: actions/attest-sbom@v1
@@ -432,12 +432,12 @@ jobs:
       with:
         command: compare
         image: ${{ steps.meta.outputs.tags }}
-        to: demonstrationorg/dhi-temurin:21_whale
+        to: artofthepossible/dhi-temurin:21_whale
 
     - name: Generate Security Report
       run: |
         echo "## 🔒 Security Analysis Report" >> $GITHUB_STEP_SUMMARY
-        echo "- **Base Image**: demonstrationorg/dhi-temurin:21_whale" >> $GITHUB_STEP_SUMMARY
+        echo "- **Base Image**: artofthepossible/dhi-temurin:21_whale" >> $GITHUB_STEP_SUMMARY
         echo "- **Built Image**: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
         echo "- **SBOM Generated**: ✅" >> $GITHUB_STEP_SUMMARY
         echo "- **Provenance Attestation**: ✅" >> $GITHUB_STEP_SUMMARY
@@ -453,14 +453,14 @@ cat Dockerfile
 
 # Build with standard images
 docker buildx build \
-  --builder cloud-demonstrationorg-default \
+  --builder cloud-artofthepossible-default \
   --sbom=true \
   --provenance=true \
-  -t demonstrationorg/foundry-of-trust:v1.0-NoDHI \
+  -t artofthepossible/foundry-of-trust:v1.0-NoDHI \
   .
 
 # Scan for vulnerabilities - show the problems
-docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
+docker scout cves artofthepossible/foundry-of-trust:v1.0-NoDHI
 ```
 
 ### Scene 2: The Solution - Golden Base Images
@@ -470,10 +470,10 @@ docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
 
 # Build with golden base images
 docker buildx build \
-  --builder cloud-demonstrationorg-default \
+  --builder cloud-artofthepossible-default \
   --sbom=true \
   --provenance=true \
-  -t demonstrationorg/foundry-of-trust:v1.0-DHI \
+  -t artofthepossible/foundry-of-trust:v1.0-DHI \
   --push \
   .
 ```
@@ -482,22 +482,22 @@ docker buildx build \
 ```bash
 # Compare vulnerability scans
 echo "=== BEFORE: Standard Images ==="
-docker scout cves demonstrationorg/foundry-of-trust:v1.0-NoDHI
+docker scout cves artofthepossible/foundry-of-trust:v1.0-NoDHI
 
 echo "=== AFTER: Golden Base Images ==="
-docker scout cves demonstrationorg/foundry-of-trust:v1.0-DHI
+docker scout cves artofthepossible/foundry-of-trust:v1.0-DHI
 
 # Verify policy compliance
-docker scout policy demonstrationorg/foundry-of-trust:v1.0-DHI
+docker scout policy artofthepossible/foundry-of-trust:v1.0-DHI
 ```
 
 ### Scene 4: Version Lineage - Ecosystem Benefits
 ```bash
 # Show all microservices using golden base
-docker scout lineage demonstrationorg/dhi-temurin:21_whale
+docker scout lineage artofthepossible/dhi-temurin:21_whale
 
 # Demonstrate centralized security management
-docker scout repo demonstrationorg
+docker scout repo artofthepossible
 ```
 
 ## 🎬 Key Demo Points
@@ -516,8 +516,8 @@ docker scout repo demonstrationorg
 **Build fails with base image not found:**
 ```bash
 # Verify registry access
-docker login demonstrationorg
-docker pull demonstrationorg/dhi-temurin:21_whale
+docker login artofthepossible
+docker pull artofthepossible/dhi-temurin:21_whale
 ```
 
 **Docker Scout not showing results:**

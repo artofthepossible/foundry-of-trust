@@ -8,7 +8,7 @@
 FROM eclipse-temurin:21-jdk-jammy AS deps
 
 # Update to DHI golden base images for immediate security improvement:
-#FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev AS deps
+#FROM artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev AS deps
 
 WORKDIR /build
 
@@ -69,7 +69,7 @@ RUN java -Djarmode=layertools -jar target/app.jar extract --destination target/e
 FROM eclipse-temurin:21-jre-jammy AS final
 
 # Update to DHI golden base images for immediate security improvement:
-#FROM demonstrationorg/dhi-temurin:21_whale AS final
+#FROM artofthepossible/dhi-temurin:21_whale AS final
 
 # Our Runtime Image has a  non-privileged user that the app will run under UID=10001.
 ARG UID=10001

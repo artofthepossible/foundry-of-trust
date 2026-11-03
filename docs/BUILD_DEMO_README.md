@@ -10,10 +10,10 @@ The script executes this Docker Buildx command with comprehensive explanations:
 
 ```bash
 docker buildx build \
-  --builder cloud-demonstrationorg-default \
+  --builder cloud-artofthepossible-default \
   --sbom=true \
   --provenance=true \
-  -t demonstrationorg/local-foundry-of-trust-nodhi:nodhi \
+  -t artofthepossible/local-foundry-of-trust-nodhi:nodhi \
   -f "DockerfileNoDHI" \
   .
 ```
@@ -45,7 +45,7 @@ docker buildx build \
 ./demos/01-build-local.sh
 
 # Test the built image
-docker run -p 8080:8080 demonstrationorg/local-foundry-of-trust-nodhi:nodhi
+docker run -p 8080:8080 artofthepossible/local-foundry-of-trust-nodhi:nodhi
 curl http://localhost:8080
 ```
 
@@ -75,5 +75,5 @@ After running this demo:
 ## Prerequisites
 
 - Docker with Buildx support
-- Access to `cloud-demonstrationorg-default` builder (optional)
+- Access to `cloud-artofthepossible-default` builder (optional)
 - Internet connection for base image downloads

@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-IMAGE_NAME="${1:-demonstrationorg/foundry-of-trust}"
+IMAGE_NAME="${1:-artofthepossible/foundry-of-trust}"
 IMAGE_TAG="${2:-v1.1-DHI-fixed}"
 VEX_FILE="${3:-scripts/assets/targeted-vex-20251008181815.json}"
 PLATFORMS="${4:-linux/amd64,linux/arm64}"

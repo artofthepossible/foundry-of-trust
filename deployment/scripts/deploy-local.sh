@@ -66,7 +66,7 @@ echo -e "${GREEN}✅ Kubectl context set to docker-desktop${NC}"
 
 # Pull the latest image to ensure it's available locally
 echo -e "${YELLOW}🐳 Pulling Docker image...${NC}"
-if docker pull "demonstrationorg/foundry-of-trust:${IMAGE_TAG}"; then
+if docker pull "artofthepossible/foundry-of-trust:${IMAGE_TAG}"; then
     echo -e "${GREEN}✅ Docker image pulled successfully${NC}"
 else
     echo -e "${RED}❌ Failed to pull Docker image. Continuing anyway...${NC}"
@@ -110,7 +110,7 @@ echo -e "${BLUE}=================================================${NC}"
 echo -e "${YELLOW}📝 Access Information:${NC}"
 echo -e "• Namespace: ${NAMESPACE}"
 echo -e "• Release: ${RELEASE_NAME}"
-echo -e "• Image: demonstrationorg/foundry-of-trust:${IMAGE_TAG}"
+echo -e "• Image: artofthepossible/foundry-of-trust:${IMAGE_TAG}"
 echo ""
 echo -e "${YELLOW}🔗 Access the application:${NC}"
 echo -e "kubectl port-forward -n ${NAMESPACE} svc/${RELEASE_NAME} 8080:80"

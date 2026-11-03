@@ -3,7 +3,7 @@
 services:
   foundry-dhi:
     # Use the DHI-built image with hardened base layers
-    image: demonstrationorg/local-foundry-of-trust:dhi
+    image: artofthepossible/local-foundry-of-trust:dhi
     container_name: foundry-of-trust-dhi
     ports:
       - "8080:8080"

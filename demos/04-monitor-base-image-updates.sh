@@ -80,14 +80,14 @@ print_security_emphasis "Keep your DHI golden base images current with automated
 print_header "🐳 Current DHI Base Images Being Monitored"
 
 print_status "MONITOR" "📋 Build Stage Image:"
-echo "   Image: demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev"
+echo "   Image: artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev"
 echo "   Digest: sha256:d32f08b3aa18668323a82e3ffb297cb1030dc1ed0d85b9786204538ab6e1a32a"
 echo "   Purpose: Development and build environment with JDK"
 echo "   Security: Pre-hardened Alpine Linux with security patches"
 echo ""
 
 print_status "MONITOR" "🚀 Runtime Stage Image:"
-echo "   Image: demonstrationorg/dhi-temurin:21-alpine3.22_whale1"
+echo "   Image: artofthepossible/dhi-temurin:21-alpine3.22_whale1"
 echo "   Digest: sha256:0189f624ac7166b288a2b127d30cb511b349d6cec5ecae5463051392d2a3a821"
 echo "   Purpose: Minimal runtime environment for production"
 echo "   Security: Hardened JRE with reduced attack surface"
@@ -152,12 +152,12 @@ fi
 
 # Check Docker Hub authentication
 print_status "INFO" "Checking Docker Hub authentication..."
-if docker manifest inspect demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev >/dev/null 2>&1; then
+if docker manifest inspect artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev >/dev/null 2>&1; then
     print_status "SUCCESS" "Docker Hub authentication working"
     DOCKER_AUTH_AVAILABLE=true
 else
     print_status "WARNING" "Docker Hub authentication required"
-    print_status "INFO" "The DHI images require authentication to demonstrationorg registry"
+    print_status "INFO" "The DHI images require authentication to artofthepossible registry"
     print_status "INFO" "Configure GitHub secrets: DOCKER_HUB_USERNAME and DOCKER_HUB_TOKEN"
     DOCKER_AUTH_AVAILABLE=false
 fi
@@ -236,7 +236,7 @@ echo ""
 print_status "MONITOR" "🛡️ Security Verification:"
 echo "   → Compare old vs new image digests"
 echo "   → Review security improvements in PR description"
-echo "   → Validate that images are still from demonstrationorg"
+echo "   → Validate that images are still from artofthepossible"
 echo "   → Confirm DHI golden image provenance"
 echo ""
 
@@ -246,7 +246,7 @@ print_header "🎯 Expected Results and Actions"
 print_status "SUCCESS" "When DHI base images have updates:"
 echo ""
 print_status "MONITOR" "✅ Automated PR Created:"
-echo "   → New digests for demonstrationorg/dhi-temurin images"
+echo "   → New digests for artofthepossible/dhi-temurin images"
 echo "   → Security patches and vulnerability fixes included"
 echo "   → Reproducible builds maintained through digest pinning"
 echo "   → Supply chain integrity verified"
@@ -292,8 +292,8 @@ print_status "INFO" "Additional monitoring and verification commands:"
 echo ""
 
 print_status "COMMAND" "Check current image digests:"
-echo "docker inspect docker.io/demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev --format='{{index .RepoDigests 0}}'"
-echo "docker inspect docker.io/demonstrationorg/dhi-temurin:21-alpine3.22_whale1 --format='{{index .RepoDigests 0}}'"
+echo "docker inspect docker.io/artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev --format='{{index .RepoDigests 0}}'"
+echo "docker inspect docker.io/artofthepossible/dhi-temurin:21-alpine3.22_whale1 --format='{{index .RepoDigests 0}}'"
 echo ""
 
 print_status "COMMAND" "Monitor workflow runs:"

@@ -136,7 +136,7 @@ demos/
 - Docker Desktop or compatible Docker runtime
 - Maven 3.6+ 
 - Java 21+
-- Access to demonstrationorg/dhi-temurin Docker registry (for DHI demos)
+- Access to artofthepossible/dhi-temurin Docker registry (for DHI demos)
 - Internet connectivity for dependency downloads
 
 ## Security Notes
