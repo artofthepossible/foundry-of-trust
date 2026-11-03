@@ -10,11 +10,11 @@ Based on the test run output from October 28, 2025, several critical issues were
 
 **Error Messages:**
 ```
-UNAUTHORIZED: authentication required; [map[Action:pull Class: Name:demonstrationorg/dhi-temurin Type:repository]]
+UNAUTHORIZED: authentication required; [map[Action:pull Class: Name:artofthepossible/dhi-temurin Type:repository]]
 ```
 
 **Root Cause:** 
-- The digestabot workflow cannot authenticate with Docker Hub to access the `demonstrationorg/dhi-temurin` repository
+- The digestabot workflow cannot authenticate with Docker Hub to access the `artofthepossible/dhi-temurin` repository
 - The repository appears to be private or requires specific authentication
 - GitHub Actions runner doesn't have the necessary Docker registry credentials
 
@@ -44,8 +44,8 @@ Unexpected input(s) 'include-files', valid inputs are ['working-dir', 'token', '
 
 **Error Messages:**
 ```
-Error: parsing reference "`demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev": could not parse reference
-Error: parsing reference "`demonstrationorg/dhi-temurin:21_whale1": could not parse reference
+Error: parsing reference "`artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev": could not parse reference
+Error: parsing reference "`artofthepossible/dhi-temurin:21_whale1": could not parse reference
 ```
 
 **Root Cause:**
@@ -79,7 +79,7 @@ Error: parsing reference "`demonstrationorg/dhi-temurin:21_whale1": could not pa
 
 ### **Primary Problem: Private Registry Access**
 
-The most critical issue is authentication with the `demonstrationorg/dhi-temurin` repository. This suggests:
+The most critical issue is authentication with the `artofthepossible/dhi-temurin` repository. This suggests:
 
 1. **Private Repository**: The DHI images are hosted in a private Docker Hub repository
 2. **Missing Credentials**: GitHub Actions runner lacks Docker registry authentication
@@ -97,7 +97,7 @@ The most critical issue is authentication with the `demonstrationorg/dhi-temurin
 ```
 
 **Required GitHub Secrets:**
-- `DOCKER_HUB_USERNAME`: Docker Hub username with access to demonstrationorg
+- `DOCKER_HUB_USERNAME`: Docker Hub username with access to artofthepossible
 - `DOCKER_HUB_TOKEN`: Docker Hub access token or password
 
 #### Option B: Use Public Registry Alternative
@@ -147,8 +147,8 @@ Since `include-files` is not supported, use file filtering approach:
 - name: Debug Registry Access
   run: |
     echo "Testing registry access..."
-    docker manifest inspect demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev || echo "Access denied"
-    docker manifest inspect demonstrationorg/dhi-temurin:21_whale1 || echo "Access denied"
+    docker manifest inspect artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev || echo "Access denied"
+    docker manifest inspect artofthepossible/dhi-temurin:21_whale1 || echo "Access denied"
 ```
 
 ## 🎯 Recommended Action Plan
@@ -173,14 +173,14 @@ Since `include-files` is not supported, use file filtering approach:
 ### Pre-Authentication Test:
 ```bash
 # Test current access (should fail)
-docker manifest inspect demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev
+docker manifest inspect artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev
 ```
 
 ### Post-Authentication Test:
 ```bash
 # Test with authentication
 echo "$DOCKER_HUB_TOKEN" | docker login -u "$DOCKER_HUB_USERNAME" --password-stdin
-docker manifest inspect demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev
+docker manifest inspect artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev
 ```
 
 ### Workflow Test:

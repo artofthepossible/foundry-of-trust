@@ -4,9 +4,9 @@
 
 set -euo pipefail
 
-IMAGE_NAME="${1:-demonstrationorg/foundry-of-trust}"
+IMAGE_NAME="${1:-artofthepossible/foundry-of-trust}"
 IMAGE_TAG="${2:-v1.1-DHI-fixed}"
-BUILDER="${3:-cloud-demonstrationorg-default}"
+BUILDER="${3:-cloud-artofthepossible-default}"
 
 FULL_IMAGE_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 VEX_FILE="scripts/assets/targeted-vex-$(date +%Y%m%d%H%M%S).json"

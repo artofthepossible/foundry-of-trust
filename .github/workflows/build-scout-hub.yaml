@@ -20,7 +20,7 @@ env:
   IMAGE_NAME: ${{ secrets.ORGANIZATION}}/${{ secrets.IMAGE_NAME }}
   SHA: ${{ github.event.pull_request.head.sha || github.event.after }}
   # Use `latest` as the tag to compare to if empty, assuming that it's already pushed
-  #COMPARE_TAG: demonstrationorg/pythons-demo:v1.1-NoDHI
+  #COMPARE_TAG: artofthepossible/pythons-demo:v1.1-NoDHI
   # add flag for build summary
   #DOCKER_BUILD_NO_SUMMARY: false
 

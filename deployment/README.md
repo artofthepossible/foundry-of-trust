@@ -1,6 +1,6 @@
 # Foundry of Trust - Local Kubernetes Deployment
 
-This directory contains Terraform configurations and Helm charts to deploy the Foundry of Trust application (`demonstrationorg/foundry-of-trust:v1.1-DHI-fixed`) to a local Docker Desktop Kubernetes cluster.
+This directory contains Terraform configurations and Helm charts to deploy the Foundry of Trust application (`artofthepossible/foundry-of-trust:v1.1-DHI-fixed`) to a local Docker Desktop Kubernetes cluster.
 
 ## 📋 Prerequisites
 
@@ -225,7 +225,7 @@ kubectl cluster-info --context docker-desktop
 **2. Image pull issues:**
 ```bash
 # Manually pull the image
-docker pull demonstrationorg/foundry-of-trust:v1.1-DHI-fixed
+docker pull artofthepossible/foundry-of-trust:v1.1-DHI-fixed
 ```
 
 **3. Port already in use:**

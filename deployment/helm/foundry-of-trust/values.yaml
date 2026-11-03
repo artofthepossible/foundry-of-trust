@@ -5,7 +5,7 @@
 replicaCount: 2
 
 image:
-  repository: demonstrationorg/foundry-of-trust
+  repository: artofthepossible/foundry-of-trust
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "v1.1-DHI-fixed"

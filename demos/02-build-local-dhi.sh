@@ -112,11 +112,11 @@ print_header "📖 DHI Command Breakdown"
 echo "We'll execute this enhanced Docker Buildx cloud command:"
 echo ""
 print_status "COMMAND" "docker buildx build \\"
-print_status "COMMAND" "  --builder cloud-demonstrationorg-default \\"
+print_status "COMMAND" "  --builder cloud-artofthepossible-default \\"
 print_status "COMMAND" "  --sbom=true \\"
 print_status "COMMAND" "  --provenance=true \\"
 print_status "COMMAND" "  --push \\"
-print_status "COMMAND" "  -t demonstrationorg/local-foundry-of-trust:dhi \\"
+print_status "COMMAND" "  -t artofthepossible/local-foundry-of-trust:dhi \\"
 print_status "COMMAND" "  -f \"Dockerfile\" \\"
 print_status "COMMAND" "  ."
 echo ""
@@ -127,7 +127,7 @@ echo "   → Tags image as 'dhi' instead of 'nodhi' for clear identification"
 echo "   → Builds upon pre-hardened, security-validated base images"
 echo "   → Uses --push to push directly to registry with cloud builder"
 echo "   → Leverages Docker Build Cloud for enhanced build performance"
-echo "   → Pushes to same repository (demonstrationorg/local-foundry-of-trust) with different tag"
+echo "   → Pushes to same repository (artofthepossible/local-foundry-of-trust) with different tag"
 echo ""
 
 # DHI Benefits Deep Dive
@@ -194,13 +194,13 @@ print_header "🔍 Dockerfile Analysis - DHI vs Standard"
 print_status "EXPLAIN" "DHI Dockerfile uses hardened golden base images:"
 echo ""
 print_status "EXPLAIN" "🏗️ Build Stage:"
-echo "   FROM demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev"
+echo "   FROM artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev"
 echo "   → Pre-hardened JDK environment with Alpine Linux"
 echo "   → Minimal attack surface, security patches applied"
 echo "   → Known good baseline for development builds"
 echo ""
 print_status "EXPLAIN" "🚀 Runtime Stage:"
-echo "   FROM demonstrationorg/dhi-temurin:21-alpine3.22_whale1"
+echo "   FROM artofthepossible/dhi-temurin:21-alpine3.22_whale1"
 echo "   → Hardened JRE runtime environment"
 echo "   → Security-focused configuration"
 echo "   → Digest pinning for supply chain security"
@@ -234,13 +234,13 @@ fi
 print_status "SUCCESS" "Docker Buildx is available"
 
 # Check if builder exists
-if ! docker buildx inspect cloud-demonstrationorg-default >/dev/null 2>&1; then
-    print_status "WARNING" "Builder 'cloud-demonstrationorg-default' not found"
+if ! docker buildx inspect cloud-artofthepossible-default >/dev/null 2>&1; then
+    print_status "WARNING" "Builder 'cloud-artofthepossible-default' not found"
     print_status "INFO" "Will use default builder instead"
     BUILDER_ARG=""
 else
-    print_status "SUCCESS" "Builder 'cloud-demonstrationorg-default' is available"
-    BUILDER_ARG="--builder cloud-demonstrationorg-default"
+    print_status "SUCCESS" "Builder 'cloud-artofthepossible-default' is available"
+    BUILDER_ARG="--builder cloud-artofthepossible-default"
 fi
 
 # Check Dockerfile
@@ -290,7 +290,7 @@ BUILD_CMD="docker buildx build"
 if [[ -n "$BUILDER_ARG" ]]; then
     BUILD_CMD="$BUILD_CMD $BUILDER_ARG"
 fi
-BUILD_CMD="$BUILD_CMD --sbom=true --provenance=true --push -t demonstrationorg/local-foundry-of-trust:dhi -f Dockerfile ."
+BUILD_CMD="$BUILD_CMD --sbom=true --provenance=true --push -t artofthepossible/local-foundry-of-trust:dhi -f Dockerfile ."
 
 print_status "COMMAND" "Executing: $BUILD_CMD"
 echo "----------------------------------------"
@@ -298,7 +298,7 @@ echo "----------------------------------------"
 # Execute the build command
 if eval "$BUILD_CMD"; then
     print_status "SUCCESS" "DHI hardened build and push completed successfully!"
-    print_status "SUCCESS" "Image pushed to demonstrationorg/local-foundry-of-trust:dhi"
+    print_status "SUCCESS" "Image pushed to artofthepossible/local-foundry-of-trust:dhi"
 else
     print_status "ERROR" "DHI hardened build and push failed"
     exit 1
@@ -313,7 +313,7 @@ print_status "INFO" "Analyzing the DHI hardened image..."
 
 # Since we pushed to registry, check if image was pushed successfully
 print_status "INFO" "Image has been pushed to registry with security attestations"
-print_status "SUCCESS" "Registry: demonstrationorg/local-foundry-of-trust:dhi"
+print_status "SUCCESS" "Registry: artofthepossible/local-foundry-of-trust:dhi"
 print_status "SUCCESS" "SBOM and provenance attestations included with pushed image"
 
 echo ""
@@ -387,10 +387,10 @@ echo "   🔍 Proactive vulnerability management workflow"
 echo ""
 
 print_status "INFO" "Next steps for security excellence:"
-echo "   → Pull and test: docker pull demonstrationorg/local-foundry-of-trust:dhi"
-echo "   → Run locally: docker run -p 8080:8080 demonstrationorg/local-foundry-of-trust:dhi"
-echo "   → Verify attestations: docker buildx imagetools inspect demonstrationorg/local-foundry-of-trust:dhi"
-echo "   → Compare images: docker buildx imagetools inspect demonstrationorg/local-foundry-of-trust:nodhi"
+echo "   → Pull and test: docker pull artofthepossible/local-foundry-of-trust:dhi"
+echo "   → Run locally: docker run -p 8080:8080 artofthepossible/local-foundry-of-trust:dhi"
+echo "   → Verify attestations: docker buildx imagetools inspect artofthepossible/local-foundry-of-trust:dhi"
+echo "   → Compare images: docker buildx imagetools inspect artofthepossible/local-foundry-of-trust:nodhi"
 echo "   → Security comparison: Compare vulnerability scans between :nodhi and :dhi tags"
 echo "   → Implement: Pre-commit security validation hooks"
 echo "   → Adopt: DHI images as your team's default base images"

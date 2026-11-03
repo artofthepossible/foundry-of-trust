@@ -12,7 +12,7 @@ name: whale1
 source: dhi/eclipse-temurin
 tag_definition_id: eclipse-temurin/alpine-3.22/jre-21
 
-destination: demonstrationorg/dhi-temurin
+destination: artofthepossible/dhi-temurin
 
 platforms:
   - linux/amd64

@@ -24,9 +24,9 @@
       },
       "products": [
         {
-          "@id": "demonstrationorg/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
+          "@id": "artofthepossible/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
           "identifiers": {
-            "purl": "pkg:oci/demonstrationorg/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
+            "purl": "pkg:oci/artofthepossible/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
             "cpe": "cpe:2.3:a:pivotal:spring-boot:3.2.10:*:*:*:*:*:*:*"
           },
           "hashes": {
@@ -52,9 +52,9 @@
       },
       "products": [
         {
-          "@id": "demonstrationorg/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
+          "@id": "artofthepossible/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
           "identifiers": {
-            "purl": "pkg:oci/demonstrationorg/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
+            "purl": "pkg:oci/artofthepossible/foundry-of-trust:v1.1-DHI-fixed@sha256:6ab30081248bd6612680a73a3ea33e80d3e5a569269b18d62c70a3e060f9535b",
             "cpe": "cpe:2.3:a:pivotal:spring-webmvc:6.1.21:*:*:*:*:*:*:*"
           },
           "hashes": {

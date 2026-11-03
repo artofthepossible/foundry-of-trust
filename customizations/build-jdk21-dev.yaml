@@ -12,7 +12,7 @@ name: dhitemurinbcgcs3t13buildalp
 source: dhi/eclipse-temurin
 tag_definition_id: eclipse-temurin/alpine-3.22/jdk-21-dev
 
-destination: demonstrationorg/dhi-temurin
+destination: artofthepossible/dhi-temurin
 
 platforms:
   - linux/amd64
@@ -26,8 +26,8 @@ contents:
     - zip
     - unzip
   artifacts:
-    - name: demonstrationorg/dhi-node:22.19-alpine3.22-dev
-    - name: demonstrationorg/dhi-tomcat-demo:11-jdk21-alpine3.22-dev
+    - name: artofthepossible/dhi-node:22.19-alpine3.22-dev
+    - name: artofthepossible/dhi-tomcat-demo:11-jdk21-alpine3.22-dev
 
 accounts:
   root: true

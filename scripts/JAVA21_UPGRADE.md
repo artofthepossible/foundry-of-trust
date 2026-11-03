@@ -142,10 +142,10 @@ curl http://localhost:8080/actuator/health
 curl http://localhost:8080/actuator/info
 
 # Check Docker container Java version
-docker run --rm demonstrationorg/foundry-of-trust:latest java -version
+docker run --rm artofthepossible/foundry-of-trust:latest java -version
 
 # Verify SBOM includes Java 21
-docker scout sbom demonstrationorg/foundry-of-trust:latest | grep -i "java\|jdk\|jre"
+docker scout sbom artofthepossible/foundry-of-trust:latest | grep -i "java\|jdk\|jre"
 ```
 
 ## 🎯 Next Steps

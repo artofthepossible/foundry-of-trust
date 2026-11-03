@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-IMAGE_NAME="${1:-demonstrationorg/foundry-of-trust}"
+IMAGE_NAME="${1:-artofthepossible/foundry-of-trust}"
 IMAGE_TAG="${2:-v1.1-DHI-fixed}"
 VEX_FILE="${3:-scripts/assets/targeted-vex-20251008181815.json}"
 
@@ -41,7 +41,7 @@ echo "📋 VEX attestation file created: $VEX_ATTESTATION_FILE"
 # Build with Buildx including VEX attestation
 echo "🔨 Building with Docker Buildx..."
 docker buildx build \
-    --builder cloud-demonstrationorg-default \
+    --builder cloud-artofthepossible-default \
     --platform linux/amd64,linux/arm64 \
     --sbom=true \
     --provenance=true \

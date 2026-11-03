@@ -14,11 +14,11 @@ BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Configuration
-REGISTRY="demonstrationorg"
+REGISTRY="artofthepossible"
 IMAGE_NAME="foundry-of-trust"
 VERSION="v1.0"
-GOLDEN_BASE="demonstrationorg/dhi-temurin:21_whale"
-BUILD_BASE="demonstrationorg/dhi-temurin:21-jdk-alpine3.21-dev"
+GOLDEN_BASE="artofthepossible/dhi-temurin:21_whale"
+BUILD_BASE="artofthepossible/dhi-temurin:21-jdk-alpine3.21-dev"
 
 echo -e "${BOLD}🐋 Foundry of Trust - Golden Path Demo${NC}"
 echo -e "${BLUE}=========================================${NC}"
