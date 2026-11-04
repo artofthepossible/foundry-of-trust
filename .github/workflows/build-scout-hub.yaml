@@ -29,9 +29,13 @@ jobs:
   build:
 
     runs-on: ubuntu-24.04
+    outputs:
+      digest: ${{ steps.build-and-push.outputs.digest }}
     # Required permissions for GitHub token
     permissions:
       contents: read
+      id-token: write
+      attestations: write
       packages: write
       pull-requests: write
       security-events: write
@@ -119,6 +123,25 @@ jobs:
           echo "   • Cloud Build: Enhanced performance and security"
       - run: echo "✅ Verify SBOM and Provenance attestations status is ${{ job.status }}."
 
+      # Sign and attach a release attestation to the pushed image
+      - name: Attest
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/attest@v2
+        id: attest
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build-and-push.outputs.digest }}
+          predicate-type: 'https://in-toto.io/attestation/release/v0.1'
+          predicate: '{"purl":"pkg:oci/${{ secrets.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}?repository_url=${{ env.REGISTRY }}/${{ secrets.ORGANIZATION }}/${{ secrets.IMAGE_NAME }}"}'
+          push-to-registry: true
+
+      - name: Upload attestation bundle
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: attestation.json
+          path: ${{ steps.attest.outputs.bundle-path }}
+
        
       #- name: Analyze for critical and high CVEs
       #  if: ${{ github.event_name != 'pull_request_target' }}
@@ -146,3 +169,19 @@ jobs:
 
 
       
+
+  OutputSummary:
+    name: Output Summary
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event_name != 'pull_request' }}
+    steps:
+      - name: Output build summary
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          DIGEST: ${{ needs.build.outputs.digest }}
+        run: |
+          echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Container Image: ${IMAGE}:latest" >> $GITHUB_STEP_SUMMARY
+          echo "Image Digest: ${DIGEST}" >> $GITHUB_STEP_SUMMARY
+          echo "Attestation Artifact: attestation.json" >> $GITHUB_STEP_SUMMARY
