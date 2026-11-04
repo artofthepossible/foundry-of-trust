@@ -17,6 +17,8 @@ permissions:
   issues: read
   pull-requests: read
 
+model: gpt-5.4
+
 network: defaults
 
 tools:
