@@ -1,9 +1,12 @@
----
 description: |
   This workflow creates daily repo status reports. It gathers recent repository
   activity (issues, PRs, discussions, releases, code changes) and generates
   engaging GitHub issues with productivity insights, community highlights,
   and project recommendations.
+
+engine:
+  id: copilot
+  model: gpt-5.4
 
 on:
   schedule: daily
@@ -14,9 +17,7 @@ permissions:
   issues: read
   pull-requests: read
 
-engine:
-  id: copilot
-  model: agent
+model: gpt-5.4
 
 network: defaults
 
