@@ -14,6 +14,10 @@ permissions:
   issues: read
   pull-requests: read
 
+engine:
+  id: copilot
+  model: agent
+
 network: defaults
 
 tools:
